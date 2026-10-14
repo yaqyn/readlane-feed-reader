@@ -1,12 +1,22 @@
 package main
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
+	_ "github.com/lib/pq"
 	"github.com/yaqyn/blog-aggregator/internal/config"
+	"github.com/yaqyn/blog-aggregator/internal/database"
 	"os"
+	"time"
 )
 
-type state struct{ cfg *config.Config }
+type state struct {
+	cfg  *config.Config
+	db   *database.Queries
+	conn *sql.DB
+	ctx  context.Context
+}
 type command struct {
 	name string
 	args []string
@@ -27,6 +37,9 @@ func handlerLogin(s *state, cmd command) error {
 	if len(cmd.args) != 1 || cmd.args[0] == "" {
 		return fmt.Errorf("usage: gator login <username>")
 	}
+	if _, err := s.db.GetUser(s.ctx, cmd.args[0]); err != nil {
+		return fmt.Errorf("user does not exist: %w", err)
+	}
 	if err := s.cfg.SetUser(cmd.args[0]); err != nil {
 		return err
 	}
@@ -41,9 +54,20 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	s := &state{cfg: &cfg}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	conn, err := sql.Open("postgres", cfg.DBURL)
+	if err != nil {
+		return fmt.Errorf("open database: %w", err)
+	}
+	defer conn.Close()
+	if err = conn.PingContext(ctx); err != nil {
+		return fmt.Errorf("database unavailable (check configuration and migrations)")
+	}
+	s := &state{cfg: &cfg, db: database.New(conn), conn: conn, ctx: ctx}
 	c := commands{handlers: make(map[string]func(*state, command) error)}
 	c.register("login", handlerLogin)
+	c.register("register", handlerRegister)
 	return c.run(s, command{name: os.Args[1], args: os.Args[2:]})
 }
 func main() {
