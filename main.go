@@ -72,6 +72,7 @@ func run() error {
 	c.register("users", handlerUsers)
 	c.register("agg", handlerAgg)
 	c.register("addfeed", handlerAddFeed)
+	c.register("feeds", handlerFeeds)
 	return c.run(s, command{name: os.Args[1], args: os.Args[2:]})
 }
 func main() {

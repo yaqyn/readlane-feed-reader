@@ -27,3 +27,17 @@ func handlerAddFeed(s *state, cmd command) error {
 	fmt.Printf("Added %s\nURL: %s\nID: %s\nUser: %s\n", feed.Name, feed.Url, feed.ID, user.Name)
 	return nil
 }
+
+func handlerFeeds(s *state, cmd command) error {
+	if len(cmd.args) != 0 {
+		return fmt.Errorf("usage: gator feeds")
+	}
+	feeds, err := s.db.GetFeeds(s.ctx)
+	if err != nil {
+		return fmt.Errorf("list feeds: %w", err)
+	}
+	for _, feed := range feeds {
+		fmt.Printf("* %s\n  %s\n  Added by %s\n", feed.Name, feed.Url, feed.UserName)
+	}
+	return nil
+}
