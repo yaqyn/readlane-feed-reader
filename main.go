@@ -8,6 +8,8 @@ import (
 	"github.com/yaqyn/blog-aggregator/internal/config"
 	"github.com/yaqyn/blog-aggregator/internal/database"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -54,14 +56,19 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
 	conn, err := sql.Open("postgres", cfg.DBURL)
 	if err != nil {
 		return fmt.Errorf("open database: %w", err)
 	}
 	defer conn.Close()
-	if err = conn.PingContext(ctx); err != nil {
+	pingCtx, pingCancel := context.WithTimeout(ctx, 5*time.Second)
+	defer pingCancel()
+	conn.SetMaxOpenConns(5)
+	conn.SetMaxIdleConns(2)
+	conn.SetConnMaxLifetime(30 * time.Minute)
+	if err = conn.PingContext(pingCtx); err != nil {
 		return fmt.Errorf("database unavailable (check configuration and migrations)")
 	}
 	s := &state{cfg: &cfg, db: database.New(conn), conn: conn, ctx: ctx}
@@ -71,6 +78,7 @@ func run() error {
 	c.register("reset", handlerReset)
 	c.register("users", handlerUsers)
 	c.register("agg", handlerAgg)
+	c.register("fetch", handlerFetch)
 	c.register("addfeed", middlewareLoggedIn(handlerAddFeed))
 	c.register("feeds", handlerFeeds)
 	c.register("follow", middlewareLoggedIn(handlerFollow))

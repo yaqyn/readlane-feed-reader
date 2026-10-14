@@ -79,14 +79,17 @@ func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
 	}
 	return &feed, nil
 }
-func handlerAgg(s *state, cmd command) error {
-	if len(cmd.args) != 0 {
-		return fmt.Errorf("usage: gator agg")
+func handlerFetch(s *state, cmd command) error {
+	if len(cmd.args) != 1 {
+		return fmt.Errorf("usage: gator fetch <url>")
 	}
-	feed, err := fetchFeed(s.ctx, "https://www.wagslane.dev/index.xml")
+	feed, err := fetchFeed(s.ctx, cmd.args[0])
 	if err != nil {
 		return err
 	}
-	fmt.Printf("%+v\n", feed)
+	fmt.Printf("%s\n%s\n", feed.Channel.Title, feed.Channel.Description)
+	for _, item := range feed.Channel.Item {
+		fmt.Printf("\n%s\n%s\n%s\n", item.Title, item.Link, item.Description)
+	}
 	return nil
 }

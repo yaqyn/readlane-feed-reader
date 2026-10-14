@@ -8,3 +8,9 @@ JOIN users ON users.id = feeds.user_id ORDER BY feeds.name, feeds.id;
 
 -- name: GetFeedByURL :one
 SELECT * FROM feeds WHERE url = $1;
+
+-- name: GetNextFeedToFetch :one
+SELECT * FROM feeds ORDER BY last_fetched_at ASC NULLS FIRST, id LIMIT 1;
+
+-- name: MarkFeedFetched :exec
+UPDATE feeds SET last_fetched_at = NOW(), updated_at = NOW() WHERE id = $1;
