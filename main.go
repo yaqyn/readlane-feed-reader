@@ -85,6 +85,8 @@ func run() error {
 	c.register("following", middlewareLoggedIn(handlerFollowing))
 	c.register("unfollow", middlewareLoggedIn(handlerUnfollow))
 	c.register("browse", middlewareLoggedIn(handlerBrowse))
+	c.register("migrate", handlerMigrate)
+	c.register("doctor", handlerDoctor)
 	return c.run(s, command{name: os.Args[1], args: os.Args[2:]})
 }
 func main() {
