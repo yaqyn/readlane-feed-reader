@@ -23,3 +23,14 @@ func handlerRegister(s *state, cmd command) error {
 	fmt.Printf("Created user %s (%s)\n", user.Name, user.ID)
 	return nil
 }
+
+func handlerReset(s *state, cmd command) error {
+	if len(cmd.args) != 0 {
+		return fmt.Errorf("usage: gator reset")
+	}
+	if err := s.db.ResetUsers(s.ctx); err != nil {
+		return fmt.Errorf("reset users: %w", err)
+	}
+	fmt.Println("Database reset")
+	return nil
+}

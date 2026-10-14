@@ -68,6 +68,7 @@ func run() error {
 	c := commands{handlers: make(map[string]func(*state, command) error)}
 	c.register("login", handlerLogin)
 	c.register("register", handlerRegister)
+	c.register("reset", handlerReset)
 	return c.run(s, command{name: os.Args[1], args: os.Args[2:]})
 }
 func main() {
