@@ -75,6 +75,7 @@ func run() error {
 	c.register("feeds", handlerFeeds)
 	c.register("follow", middlewareLoggedIn(handlerFollow))
 	c.register("following", middlewareLoggedIn(handlerFollowing))
+	c.register("unfollow", middlewareLoggedIn(handlerUnfollow))
 	return c.run(s, command{name: os.Args[1], args: os.Args[2:]})
 }
 func main() {
