@@ -16,18 +16,18 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
-	"github.com/yaqyn/blog-aggregator/internal/config"
-	"github.com/yaqyn/blog-aggregator/internal/database"
-	"github.com/yaqyn/blog-aggregator/internal/migrations"
+	"github.com/yaqyn/readlane/internal/config"
+	"github.com/yaqyn/readlane/internal/database"
+	"github.com/yaqyn/readlane/internal/migrations"
 )
 
 // Every integration test gets a separate schema in an explicitly named test DB.
 // The database-name check prevents accidentally running fixtures on a real DB.
 func integrationState(t *testing.T) *state {
 	t.Helper()
-	dsn := os.Getenv("GATOR_TEST_DATABASE_URL")
+	dsn := os.Getenv("READLANE_TEST_DATABASE_URL")
 	if dsn == "" {
-		t.Skip("GATOR_TEST_DATABASE_URL is unset")
+		t.Skip("READLANE_TEST_DATABASE_URL is unset")
 	}
 	admin, err := sql.Open("postgres", dsn)
 	if err != nil {
@@ -44,7 +44,7 @@ func integrationState(t *testing.T) *state {
 		admin.Close()
 		t.Fatal("integration tests require a database whose name ends in _test")
 	}
-	schema := "gator_" + strings.ReplaceAll(uuid.NewString(), "-", "")
+	schema := "readlane_" + strings.ReplaceAll(uuid.NewString(), "-", "")
 	if _, err = admin.ExecContext(ctx, "CREATE SCHEMA "+pq.QuoteIdentifier(schema)); err != nil {
 		admin.Close()
 		t.Fatal(err)
@@ -74,7 +74,7 @@ func integrationState(t *testing.T) *state {
 		t.Fatal(err)
 	}
 	p := filepath.Join(t.TempDir(), "config.json")
-	t.Setenv("GATOR_CONFIG", p)
+	t.Setenv("READLANE_CONFIG", p)
 	cfg := &config.Config{DBURL: u.String()}
 	if err = cfg.SetUser(""); err != nil {
 		t.Fatal(err)

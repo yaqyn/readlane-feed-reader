@@ -1,4 +1,4 @@
-module github.com/yaqyn/blog-aggregator
+module github.com/yaqyn/readlane
 
 go 1.27.2
 

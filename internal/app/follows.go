@@ -3,13 +3,13 @@ package app
 import (
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/yaqyn/blog-aggregator/internal/database"
+	"github.com/yaqyn/readlane/internal/database"
 	"time"
 )
 
 func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 1 {
-		return fmt.Errorf("usage: gator follow <url>")
+		return fmt.Errorf("usage: readlane follow <url>")
 	}
 	feed, err := s.db.GetFeedByURL(s.ctx, cmd.args[0])
 	if err != nil {
@@ -25,7 +25,7 @@ func handlerFollow(s *state, cmd command, user database.User) error {
 }
 func handlerFollowing(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 0 {
-		return fmt.Errorf("usage: gator following")
+		return fmt.Errorf("usage: readlane following")
 	}
 	follows, err := s.db.GetFeedFollowsForUser(s.ctx, user.ID)
 	if err != nil {
@@ -39,7 +39,7 @@ func handlerFollowing(s *state, cmd command, user database.User) error {
 
 func handlerUnfollow(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 1 {
-		return fmt.Errorf("usage: gator unfollow <url>")
+		return fmt.Errorf("usage: readlane unfollow <url>")
 	}
 	feed, err := s.db.GetFeedByURL(s.ctx, cmd.args[0])
 	if err != nil {

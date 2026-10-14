@@ -3,13 +3,13 @@ package app
 import (
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/yaqyn/blog-aggregator/internal/database"
+	"github.com/yaqyn/readlane/internal/database"
 	"time"
 )
 
 func handlerRegister(s *state, cmd command) error {
 	if len(cmd.args) != 1 || !validName(cmd.args[0], 100) {
-		return fmt.Errorf("usage: gator register <username> (1–100 characters)")
+		return fmt.Errorf("usage: readlane register <username> (1–100 characters)")
 	}
 	now := time.Now().UTC()
 	user, err := s.db.CreateUser(s.ctx, database.CreateUserParams{ID: uuid.New(), CreatedAt: now, UpdatedAt: now, Name: cmd.args[0]})
@@ -25,7 +25,7 @@ func handlerRegister(s *state, cmd command) error {
 
 func handlerReset(s *state, cmd command) error {
 	if len(cmd.args) != 1 || cmd.args[0] != "--confirm" {
-		return fmt.Errorf("reset deletes every user, feed and post; use gator reset --confirm")
+		return fmt.Errorf("reset deletes every user, feed and post; use readlane reset --confirm")
 	}
 	if err := s.db.ResetUsers(s.ctx); err != nil {
 		return databaseError("reset users", err)
@@ -39,7 +39,7 @@ func handlerReset(s *state, cmd command) error {
 
 func handlerUsers(s *state, cmd command) error {
 	if len(cmd.args) != 0 {
-		return fmt.Errorf("usage: gator users")
+		return fmt.Errorf("usage: readlane users")
 	}
 	users, err := s.db.GetUsers(s.ctx)
 	if err != nil {

@@ -12,8 +12,8 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/yaqyn/blog-aggregator/internal/config"
-	"github.com/yaqyn/blog-aggregator/internal/database"
+	"github.com/yaqyn/readlane/internal/config"
+	"github.com/yaqyn/readlane/internal/database"
 )
 
 var Version = "dev"
@@ -36,7 +36,7 @@ func (c *commands) register(name string, f func(*state, command) error) { c.hand
 func (c *commands) run(s *state, cmd command) error {
 	f, ok := c.handlers[cmd.name]
 	if !ok {
-		return fmt.Errorf("unknown command %q; use gator help", cleanText(cmd.name, 100))
+		return fmt.Errorf("unknown command %q; use readlane help", cleanText(cmd.name, 100))
 	}
 	return f(s, cmd)
 }
@@ -60,7 +60,7 @@ func registeredCommands() commands {
 }
 func handlerLogin(s *state, cmd command) error {
 	if len(cmd.args) != 1 || !validName(cmd.args[0], 100) {
-		return fmt.Errorf("usage: gator login <username>")
+		return fmt.Errorf("usage: readlane login <username>")
 	}
 	if _, err := s.db.GetUser(s.ctx, cmd.args[0]); err != nil {
 		return databaseError("find user", err)
@@ -72,9 +72,9 @@ func handlerLogin(s *state, cmd command) error {
 	return nil
 }
 
-const usage = `gator — collect and browse RSS and Atom feeds
+const usage = `readlane — collect and browse RSS and Atom feeds
 
-Usage: gator <command> [arguments]
+Usage: readlane <command> [arguments]
 
   migrate                         Apply embedded database migrations
   doctor                          Check database connectivity and schema
@@ -93,26 +93,26 @@ Usage: gator <command> [arguments]
   version                         Print the build version
   help                            Show this help
 
-Config: ~/.gatorconfig.json (override with GATOR_CONFIG)
-Database URL override: GATOR_DATABASE_URL
+Config: ~/.readlane.json (override with READLANE_CONFIG)
+Database URL override: READLANE_DATABASE_URL
 Local user selection is not authentication.
 `
 
 func runCLI(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("a command is required; use gator help")
+		return fmt.Errorf("a command is required; use readlane help")
 	}
 	if args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
 		fmt.Print(usage)
 		return nil
 	}
 	if args[0] == "version" || args[0] == "--version" {
-		fmt.Println("gator", Version)
+		fmt.Println("readlane", Version)
 		return nil
 	}
 	c := registeredCommands()
 	if _, ok := c.handlers[args[0]]; !ok {
-		return fmt.Errorf("unknown command %q; use gator help", cleanText(args[0], 100))
+		return fmt.Errorf("unknown command %q; use readlane help", cleanText(args[0], 100))
 	}
 	cmd := command{name: args[0], args: args[1:]}
 	if cmd.name != "agg" {
@@ -136,7 +136,7 @@ func runCLI(ctx context.Context, args []string) error {
 		return err
 	}
 	dbURL := cfg.DBURL
-	if override := os.Getenv("GATOR_DATABASE_URL"); override != "" {
+	if override := config.Env("DATABASE_URL"); override != "" {
 		dbURL = override
 	}
 	u, err := url.Parse(dbURL)
@@ -161,14 +161,14 @@ func runCLI(ctx context.Context, args []string) error {
 func run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer cancel()
-	if os.Getenv("GATOR_LOG_FORMAT") == "json" {
+	if config.Env("LOG_FORMAT") == "json" {
 		slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, nil)))
 	}
 	return runCLI(ctx, os.Args[1:])
 }
 func Main() {
 	if err := run(); err != nil {
-		fmt.Fprintln(os.Stderr, "gator:", cleanText(err.Error(), 1000))
+		fmt.Fprintln(os.Stderr, "readlane:", cleanText(err.Error(), 1000))
 		os.Exit(1)
 	}
 }

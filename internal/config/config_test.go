@@ -10,12 +10,12 @@ import (
 func configPath(t *testing.T) string {
 	t.Helper()
 	p := filepath.Join(t.TempDir(), "config.json")
-	t.Setenv("GATOR_CONFIG", p)
+	t.Setenv("READLANE_CONFIG", p)
 	return p
 }
 func TestSetUserPersistsPrivateConfig(t *testing.T) {
 	p := configPath(t)
-	c := Config{DBURL: "postgres://user@localhost/gator", CurrentUserName: "old"}
+	c := Config{DBURL: "postgres://user@localhost/readlane", CurrentUserName: "old"}
 	if err := c.SetUser("new"); err != nil {
 		t.Fatal(err)
 	}
@@ -35,7 +35,7 @@ func TestSetUserPersistsPrivateConfig(t *testing.T) {
 	}
 }
 func TestFailedWriteDoesNotChangeMemory(t *testing.T) {
-	t.Setenv("GATOR_CONFIG", filepath.Join(t.TempDir(), "missing", "config.json"))
+	t.Setenv("READLANE_CONFIG", filepath.Join(t.TempDir(), "missing", "config.json"))
 	c := Config{DBURL: "postgres://example", CurrentUserName: "old"}
 	if err := c.SetUser("new"); err == nil {
 		t.Fatal("expected write failure")
@@ -67,5 +67,39 @@ func TestRejectPublicConfig(t *testing.T) {
 	}
 	if _, err := Read(); err == nil {
 		t.Fatal("accepted world-readable config")
+	}
+}
+
+func TestReadlaneEnvironmentPrecedesLegacy(t *testing.T) {
+	t.Setenv("GATOR_CONFIG", "legacy.json")
+	t.Setenv("READLANE_CONFIG", "current.json")
+	if got := Env("CONFIG"); got != "current.json" {
+		t.Fatalf("new environment lost precedence: %s", got)
+	}
+	t.Setenv("READLANE_CONFIG", "")
+	if got := Env("CONFIG"); got != "legacy.json" {
+		t.Fatalf("legacy environment not accepted: %s", got)
+	}
+}
+func TestDefaultPathPreservesExistingConfig(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("READLANE_CONFIG", "")
+	t.Setenv("GATOR_CONFIG", "")
+	legacy := filepath.Join(home, ".gatorconfig.json")
+	if err := os.WriteFile(legacy, []byte(`{"db_url":"postgres://existing"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := Read()
+	if err != nil || cfg.DBURL != "postgres://existing" {
+		t.Fatalf("legacy config failed: %+v %v", cfg, err)
+	}
+	current := filepath.Join(home, ".readlane.json")
+	if err := os.WriteFile(current, []byte(`{"db_url":"postgres://current"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err = Read()
+	if err != nil || cfg.DBURL != "postgres://current" {
+		t.Fatalf("new config failed: %+v %v", cfg, err)
 	}
 }

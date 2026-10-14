@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/yaqyn/blog-aggregator/internal/database"
+	"github.com/yaqyn/readlane/internal/database"
 	"log/slog"
 	"time"
 )
@@ -14,7 +14,7 @@ const workerLockID int64 = 718421
 
 func handlerAgg(s *state, cmd command) error {
 	if len(cmd.args) < 1 || len(cmd.args) > 2 || (len(cmd.args) == 2 && cmd.args[1] != "--once") {
-		return fmt.Errorf("usage: gator agg <interval> [--once]")
+		return fmt.Errorf("usage: readlane agg <interval> [--once]")
 	}
 	interval, err := time.ParseDuration(cmd.args[0])
 	if err != nil || interval < 5*time.Second {

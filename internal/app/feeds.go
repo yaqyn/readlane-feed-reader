@@ -3,13 +3,13 @@ package app
 import (
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/yaqyn/blog-aggregator/internal/database"
+	"github.com/yaqyn/readlane/internal/database"
 	"time"
 )
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 2 || !validName(cmd.args[0], 200) {
-		return fmt.Errorf("usage: gator addfeed <name> <url>")
+		return fmt.Errorf("usage: readlane addfeed <name> <url>")
 	}
 	if err := validateFeedURL(cmd.args[1]); err != nil {
 		return err
@@ -38,7 +38,7 @@ func handlerAddFeed(s *state, cmd command, user database.User) error {
 
 func handlerFeeds(s *state, cmd command) error {
 	if len(cmd.args) != 0 {
-		return fmt.Errorf("usage: gator feeds")
+		return fmt.Errorf("usage: readlane feeds")
 	}
 	feeds, err := s.db.GetFeeds(s.ctx)
 	if err != nil {

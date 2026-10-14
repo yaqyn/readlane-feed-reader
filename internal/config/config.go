@@ -1,4 +1,4 @@
-// Package config persists the local user's Gator settings.
+// Package config persists the local user's Readlane settings.
 package config
 
 import (
@@ -11,7 +11,7 @@ import (
 	"runtime"
 )
 
-const configFileName = ".gatorconfig.json"
+const configFileName = ".readlane.json"
 
 type Config struct {
 	DBURL           string `json:"db_url"`
@@ -19,14 +19,21 @@ type Config struct {
 }
 
 func getConfigFilePath() (string, error) {
-	if p := os.Getenv("GATOR_CONFIG"); p != "" {
+	if p := Env("CONFIG"); p != "" {
 		return p, nil
 	}
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(home, configFileName), nil
+	current := filepath.Join(home, configFileName)
+	if _, err := os.Stat(current); os.IsNotExist(err) {
+		legacy := filepath.Join(home, ".gatorconfig.json")
+		if _, err := os.Stat(legacy); err == nil {
+			return legacy, nil
+		}
+	}
+	return current, nil
 }
 func Read() (Config, error) {
 	var cfg Config
@@ -82,7 +89,7 @@ func write(cfg Config) error {
 	if err != nil {
 		return err
 	}
-	f, err := os.CreateTemp(filepath.Dir(p), ".gatorconfig-*")
+	f, err := os.CreateTemp(filepath.Dir(p), ".readlaneconfig-*")
 	if err != nil {
 		return err
 	}
@@ -99,4 +106,12 @@ func write(cfg Config) error {
 		return err
 	}
 	return os.Rename(f.Name(), p)
+}
+
+// Env prefers the Readlane name and accepts the prior Gator setting during migration.
+func Env(key string) string {
+	if value := os.Getenv("READLANE_" + key); value != "" {
+		return value
+	}
+	return os.Getenv("GATOR_" + key)
 }

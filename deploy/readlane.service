@@ -1,11 +1,11 @@
 [Unit]
-Description=Gator RSS and Atom aggregation worker
+Description=Readlane RSS and Atom aggregation worker
 After=network-online.target
 
 [Service]
 Type=simple
-ExecStart=%h/.local/bin/gator agg 1m
-Environment=GATOR_LOG_FORMAT=json
+ExecStart=%h/.local/bin/readlane agg 1m
+Environment=READLANE_LOG_FORMAT=json
 Restart=on-failure
 RestartSec=15s
 TimeoutStopSec=15s

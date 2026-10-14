@@ -2,12 +2,12 @@ package app
 
 import (
 	"fmt"
-	"github.com/yaqyn/blog-aggregator/internal/migrations"
+	"github.com/yaqyn/readlane/internal/migrations"
 )
 
 func handlerMigrate(s *state, cmd command) error {
 	if len(cmd.args) != 0 {
-		return fmt.Errorf("usage: gator migrate")
+		return fmt.Errorf("usage: readlane migrate")
 	}
 	if err := migrations.Up(s.ctx, s.conn); err != nil {
 		return fmt.Errorf("migrate database: %w", err)
@@ -17,7 +17,7 @@ func handlerMigrate(s *state, cmd command) error {
 }
 func handlerDoctor(s *state, cmd command) error {
 	if len(cmd.args) != 0 {
-		return fmt.Errorf("usage: gator doctor")
+		return fmt.Errorf("usage: readlane doctor")
 	}
 	p, err := migrations.Provider(s.conn)
 	if err != nil {
@@ -28,7 +28,7 @@ func handlerDoctor(s *state, cmd command) error {
 		return fmt.Errorf("check migrations: %w", err)
 	}
 	if pending {
-		return fmt.Errorf("pending database migrations; run gator migrate")
+		return fmt.Errorf("pending database migrations; run readlane migrate")
 	}
 	fmt.Println("Database reachable; schema up to date")
 	return nil

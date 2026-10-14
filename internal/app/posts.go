@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/yaqyn/blog-aggregator/internal/database"
+	"github.com/yaqyn/readlane/internal/database"
 	"strconv"
 	"strings"
 	"time"
@@ -40,7 +40,7 @@ func savePost(s *state, feedID uuid.UUID, item RSSItem) (int64, error) {
 }
 func handlerBrowse(s *state, cmd command, user database.User) error {
 	if len(cmd.args) > 2 {
-		return fmt.Errorf("usage: gator browse [limit] [offset]")
+		return fmt.Errorf("usage: readlane browse [limit] [offset]")
 	}
 	limit, offset := 2, 0
 	var err error
@@ -61,7 +61,7 @@ func handlerBrowse(s *state, cmd command, user database.User) error {
 		return databaseError("browse posts", err)
 	}
 	if len(posts) == 0 {
-		fmt.Println("No posts found. Follow a feed and run gator agg 1m.")
+		fmt.Println("No posts found. Follow a feed and run readlane agg 1m.")
 		return nil
 	}
 	for _, p := range posts {

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Exercise a built Gator executable using disposable PostgreSQL databases.
+"""Exercise a built Readlane executable using disposable PostgreSQL databases.
 
-Requires GATOR_TEST_DATABASE_URL pointing to a database ending in _test and a
+Requires READLANE_TEST_DATABASE_URL pointing to a database ending in _test and a
 role allowed to create databases and roles. No live database is reset.
 """
 import http.server
@@ -71,18 +71,18 @@ class Fixture(http.server.BaseHTTPRequestHandler):
 
 
 def main():
-    original = os.environ.get("GATOR_TEST_DATABASE_URL")
+    original = os.environ.get("READLANE_TEST_DATABASE_URL")
     if not original:
-        raise SystemExit("Set GATOR_TEST_DATABASE_URL to a disposable database ending in _test")
-    binary = str(pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else "gator").resolve())
+        raise SystemExit("Set READLANE_TEST_DATABASE_URL to a disposable database ending in _test")
+    binary = str(pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else "readlane").resolve())
     base = urllib.parse.urlsplit(original)
     admin = client_environment(original)
     if not sql("SELECT current_database()", admin).endswith("_test"):
         raise SystemExit("Refusing verification against a database whose name does not end in _test")
     suffix = uuid.uuid4().hex[:10]
-    deployment = "gator_binary_" + suffix + "_test"
-    restore = "gator_restore_" + suffix + "_test"
-    role = "gator_worker_" + suffix
+    deployment = "readlane_binary_" + suffix + "_test"
+    restore = "readlane_restore_" + suffix + "_test"
+    role = "readlane_worker_" + suffix
     created = []
     role_created = False
     server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), Fixture)
@@ -96,7 +96,7 @@ def main():
         "(SELECT count(*) FROM feed_follows),(SELECT count(*) FROM posts)"
     )
     try:
-        with tempfile.TemporaryDirectory(prefix="gator-binary-") as directory:
+        with tempfile.TemporaryDirectory(prefix="readlane-binary-") as directory:
             for name in (deployment, restore):
                 sql('CREATE DATABASE "' + name + '"', admin)
                 created.append(name)
@@ -104,8 +104,8 @@ def main():
             config.write_text(json.dumps({"db_url": dsn(deployment), "current_user_name": ""}))
             config.chmod(0o600)
             env = os.environ.copy()
-            env["GATOR_CONFIG"] = str(config)
-            env.pop("GATOR_DATABASE_URL", None)
+            env["READLANE_CONFIG"] = str(config)
+            env.pop("READLANE_DATABASE_URL", None)
             feed_url = "http://127.0.0.1:" + str(server.server_port) + "/feed"
             commands = (
                 ["migrate"], ["migrate"], ["doctor"], ["register", "verification"],
@@ -128,7 +128,7 @@ def main():
             )
             require(before == sql(counts, client_environment(dsn(restore))), "restored counts differ")
             check_env = env.copy()
-            check_env["GATOR_DATABASE_URL"] = dsn(restore)
+            check_env["READLANE_DATABASE_URL"] = dsn(restore)
             execute([binary, "doctor"], check_env)
 
             sql('CREATE ROLE "' + role + '" NOLOGIN', admin)
@@ -145,7 +145,7 @@ def main():
             query = urllib.parse.parse_qs(worker_url.query)
             query["options"] = ["-c role=" + role]
             worker_env = env.copy()
-            worker_env["GATOR_DATABASE_URL"] = urllib.parse.urlunsplit(
+            worker_env["READLANE_DATABASE_URL"] = urllib.parse.urlunsplit(
                 worker_url._replace(query=urllib.parse.urlencode(query, doseq=True))
             )
             execute([binary, "agg", "5s", "--once"], worker_env)

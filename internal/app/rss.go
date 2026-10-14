@@ -98,7 +98,7 @@ func fetchFeedConditional(ctx context.Context, feedURL, etag, lastModified strin
 	if err != nil {
 		return nil, feedMetadata{}, err
 	}
-	req.Header.Set("User-Agent", "gator")
+	req.Header.Set("User-Agent", "readlane")
 	req.Header.Set("Accept", "application/rss+xml, application/xml, text/xml")
 	if etag != "" {
 		req.Header.Set("If-None-Match", etag)
@@ -218,7 +218,7 @@ func parseFeed(b []byte, base *url.URL) (*RSSFeed, error) {
 
 func handlerFetch(s *state, cmd command) error {
 	if len(cmd.args) != 1 {
-		return fmt.Errorf("usage: gator fetch <url>")
+		return fmt.Errorf("usage: readlane fetch <url>")
 	}
 	feed, err := fetchFeed(s.ctx, cmd.args[0])
 	if err != nil {

@@ -13,7 +13,7 @@ import (
 
 func TestFetchRSS(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("User-Agent") != "gator" {
+		if r.Header.Get("User-Agent") != "readlane" {
 			t.Error("missing user agent")
 		}
 		fmt.Fprint(w, `<rss><channel><title>A &amp;amp; B</title><item><title>&amp;ldquo;Hello&amp;rdquo;</title><link>/post#part</link><description>&lt;p&gt;Summary&lt;/p&gt;</description></item></channel></rss>`)
@@ -112,7 +112,7 @@ func TestSafeTerminalSummary(t *testing.T) {
 	}
 }
 func TestHelpAndVersionNeedNoConfig(t *testing.T) {
-	t.Setenv("GATOR_CONFIG", "/nonexistent/config")
+	t.Setenv("READLANE_CONFIG", "/nonexistent/config")
 	for _, cmd := range []string{"help", "version"} {
 		if err := runCLI(context.Background(), []string{cmd}); err != nil {
 			t.Fatal(err)

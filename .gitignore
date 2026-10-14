@@ -1,5 +1,7 @@
 /gator
+/readlane
 /out
 /.gatorconfig.json
 /.env
 /coverage.out
+/.readlane.json

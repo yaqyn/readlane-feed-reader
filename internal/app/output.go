@@ -88,7 +88,7 @@ func databaseError(action string, err error) error {
 		case "23503":
 			return fmt.Errorf("%s: related record no longer exists", action)
 		case "42P01", "42703":
-			return fmt.Errorf("%s: schema is out of date; run gator migrate", action)
+			return fmt.Errorf("%s: schema is out of date; run readlane migrate", action)
 		}
 	}
 	return fmt.Errorf("%s: database operation failed", action)
