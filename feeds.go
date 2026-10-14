@@ -20,9 +20,22 @@ func handlerAddFeed(s *state, cmd command) error {
 		return fmt.Errorf("login required: %w", err)
 	}
 	now := time.Now().UTC()
-	feed, err := s.db.CreateFeed(s.ctx, database.CreateFeedParams{ID: uuid.New(), CreatedAt: now, UpdatedAt: now, Name: cmd.args[0], Url: cmd.args[1], UserID: user.ID})
+	tx, err := s.conn.BeginTx(s.ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	q := s.db.WithTx(tx)
+	feed, err := q.CreateFeed(s.ctx, database.CreateFeedParams{ID: uuid.New(), CreatedAt: now, UpdatedAt: now, Name: cmd.args[0], Url: cmd.args[1], UserID: user.ID})
 	if err != nil {
 		return fmt.Errorf("create feed: %w", err)
+	}
+	_, err = q.CreateFeedFollow(s.ctx, database.CreateFeedFollowParams{ID: uuid.New(), CreatedAt: now, UpdatedAt: now, UserID: user.ID, FeedID: feed.ID})
+	if err != nil {
+		return fmt.Errorf("follow new feed: %w", err)
+	}
+	if err = tx.Commit(); err != nil {
+		return err
 	}
 	fmt.Printf("Added %s\nURL: %s\nID: %s\nUser: %s\n", feed.Name, feed.Url, feed.ID, user.Name)
 	return nil
