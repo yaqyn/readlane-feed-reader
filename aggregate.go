@@ -96,8 +96,18 @@ func scrapeFeeds(s *state) error {
 		slog.Warn("feed request failed", "feed_id", feed.ID, "error", err)
 		return nil
 	}
+	inserted := int64(0)
 	for _, item := range rss.Channel.Item {
-		fmt.Println(item.Title)
+		if err := validateFeedURL(item.Link); err != nil {
+			slog.Warn("skipping item without a valid URL", "feed_id", feed.ID)
+			continue
+		}
+		n, err := savePost(s, feed.ID, item)
+		if err != nil {
+			return fmt.Errorf("save post: %w", err)
+		}
+		inserted += n
 	}
+	slog.Info("feed collected", "feed_id", feed.ID, "items", len(rss.Channel.Item), "inserted", inserted)
 	return nil
 }
