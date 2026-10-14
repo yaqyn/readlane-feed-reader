@@ -8,16 +8,12 @@ import (
 	"time"
 )
 
-func handlerAddFeed(s *state, cmd command) error {
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 2 || strings.TrimSpace(cmd.args[0]) == "" || len(cmd.args[0]) > 200 {
 		return fmt.Errorf("usage: gator addfeed <name> <url>")
 	}
 	if err := validateFeedURL(cmd.args[1]); err != nil {
 		return err
-	}
-	user, err := s.db.GetUser(s.ctx, s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("login required: %w", err)
 	}
 	now := time.Now().UTC()
 	tx, err := s.conn.BeginTx(s.ctx, nil)

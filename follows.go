@@ -7,13 +7,9 @@ import (
 	"time"
 )
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 1 {
 		return fmt.Errorf("usage: gator follow <url>")
-	}
-	user, err := s.db.GetUser(s.ctx, s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("login required: %w", err)
 	}
 	feed, err := s.db.GetFeedByURL(s.ctx, cmd.args[0])
 	if err != nil {
@@ -27,13 +23,9 @@ func handlerFollow(s *state, cmd command) error {
 	fmt.Printf("%s follows %s\n", follow.UserName, follow.FeedName)
 	return nil
 }
-func handlerFollowing(s *state, cmd command) error {
+func handlerFollowing(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 0 {
 		return fmt.Errorf("usage: gator following")
-	}
-	user, err := s.db.GetUser(s.ctx, s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("login required: %w", err)
 	}
 	follows, err := s.db.GetFeedFollowsForUser(s.ctx, user.ID)
 	if err != nil {
