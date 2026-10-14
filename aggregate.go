@@ -81,11 +81,11 @@ func scrapeFeeds(s *state) error {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("select next feed: %w", err)
+		return databaseError("select next feed", err)
 	}
 	// Record an attempt before the request so a broken feed cannot starve others.
 	if err = s.db.MarkFeedFetched(s.ctx, feed.ID); err != nil {
-		return fmt.Errorf("mark feed fetched: %w", err)
+		return databaseError("mark feed fetched", err)
 	}
 	slog.Info("fetching feed", "feed_id", feed.ID, "name", feed.Name)
 	rss, err := fetchFeed(s.ctx, feed.Url)
@@ -104,7 +104,7 @@ func scrapeFeeds(s *state) error {
 		}
 		n, err := savePost(s, feed.ID, item)
 		if err != nil {
-			return fmt.Errorf("save post: %w", err)
+			return databaseError("save post", err)
 		}
 		inserted += n
 	}

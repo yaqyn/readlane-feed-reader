@@ -13,14 +13,14 @@ func handlerFollow(s *state, cmd command, user database.User) error {
 	}
 	feed, err := s.db.GetFeedByURL(s.ctx, cmd.args[0])
 	if err != nil {
-		return fmt.Errorf("find feed: %w", err)
+		return databaseError("find feed", err)
 	}
 	now := time.Now().UTC()
 	follow, err := s.db.CreateFeedFollow(s.ctx, database.CreateFeedFollowParams{ID: uuid.New(), CreatedAt: now, UpdatedAt: now, UserID: user.ID, FeedID: feed.ID})
 	if err != nil {
-		return fmt.Errorf("follow feed: %w", err)
+		return databaseError("follow feed", err)
 	}
-	fmt.Printf("%s follows %s\n", follow.UserName, follow.FeedName)
+	fmt.Printf("%s follows %s\n", cleanText(follow.UserName, 100), cleanText(follow.FeedName, 200))
 	return nil
 }
 func handlerFollowing(s *state, cmd command, user database.User) error {
@@ -29,10 +29,10 @@ func handlerFollowing(s *state, cmd command, user database.User) error {
 	}
 	follows, err := s.db.GetFeedFollowsForUser(s.ctx, user.ID)
 	if err != nil {
-		return fmt.Errorf("list follows: %w", err)
+		return databaseError("list follows", err)
 	}
 	for _, f := range follows {
-		fmt.Printf("* %s\n", f.FeedName)
+		fmt.Printf("* %s\n", cleanText(f.FeedName, 200))
 	}
 	return nil
 }
@@ -43,15 +43,15 @@ func handlerUnfollow(s *state, cmd command, user database.User) error {
 	}
 	feed, err := s.db.GetFeedByURL(s.ctx, cmd.args[0])
 	if err != nil {
-		return fmt.Errorf("find feed: %w", err)
+		return databaseError("find feed", err)
 	}
 	count, err := s.db.DeleteFeedFollow(s.ctx, database.DeleteFeedFollowParams{UserID: user.ID, FeedID: feed.ID})
 	if err != nil {
-		return fmt.Errorf("unfollow feed: %w", err)
+		return databaseError("unfollow feed", err)
 	}
 	if count == 0 {
 		return fmt.Errorf("you are not following this feed")
 	}
-	fmt.Printf("Unfollowed %s\n", feed.Name)
+	fmt.Printf("Unfollowed %s\n", cleanText(feed.Name, 200))
 	return nil
 }

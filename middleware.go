@@ -12,7 +12,7 @@ func middlewareLoggedIn(handler func(*state, command, database.User) error) func
 		}
 		user, err := s.db.GetUser(s.ctx, s.cfg.CurrentUserName)
 		if err != nil {
-			return fmt.Errorf("current user not found; use gator login <username>: %w", err)
+			return fmt.Errorf("current user not found; use gator login <username>")
 		}
 		return handler(s, cmd, user)
 	}

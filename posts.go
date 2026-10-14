@@ -6,17 +6,34 @@ import (
 	"github.com/google/uuid"
 	"github.com/yaqyn/blog-aggregator/internal/database"
 	"strconv"
+	"strings"
 	"time"
 )
 
 func parsePublishedAt(raw string) sql.NullTime {
-	for _, format := range []string{time.RFC1123Z, time.RFC1123, time.RFC822Z, time.RFC822, time.RFC3339Nano, time.RFC850, time.ANSIC, "Mon, 2 Jan 2006 15:04:05 -0700", "2006-01-02T15:04:05-0700", "2006-01-02"} {
+	raw = strings.TrimSpace(raw)
+	for _, format := range []string{time.RFC1123Z, time.RFC822Z, time.RFC3339Nano, "Mon, 2 Jan 2006 15:04:05 -0700", "2006-01-02T15:04:05-0700", time.ANSIC, "2006-01-02"} {
 		if t, err := time.Parse(format, raw); err == nil {
 			return sql.NullTime{Time: t.UTC(), Valid: true}
 		}
 	}
+	// time.Parse silently assigns offset zero to unknown zone abbreviations.
+	// Recognize common RSS zones explicitly instead of misdating those posts.
+	zones := map[string]int{"UT": 0, "UTC": 0, "GMT": 0, "EST": -5, "EDT": -4, "CST": -6, "CDT": -5, "MST": -7, "MDT": -6, "PST": -8, "PDT": -7}
+	parts := strings.Fields(raw)
+	if len(parts) > 0 {
+		zone := parts[len(parts)-1]
+		if offset, ok := zones[zone]; ok {
+			for _, format := range []string{time.RFC1123, time.RFC822, "Mon, 2 Jan 2006 15:04:05 MST"} {
+				if t, err := time.ParseInLocation(format, raw, time.FixedZone(zone, offset*3600)); err == nil {
+					return sql.NullTime{Time: t.UTC(), Valid: true}
+				}
+			}
+		}
+	}
 	return sql.NullTime{}
 }
+
 func savePost(s *state, feedID uuid.UUID, item RSSItem) (int64, error) {
 	now := time.Now().UTC()
 	return s.db.CreatePost(s.ctx, database.CreatePostParams{ID: uuid.New(), CreatedAt: now, UpdatedAt: now, Title: item.Title, Url: item.Link, Description: item.Description, PublishedAt: parsePublishedAt(item.PubDate), FeedID: feedID})
@@ -41,7 +58,7 @@ func handlerBrowse(s *state, cmd command, user database.User) error {
 	}
 	posts, err := s.db.GetPostsForUser(s.ctx, database.GetPostsForUserParams{UserID: user.ID, Limit: int32(limit), Offset: int32(offset)})
 	if err != nil {
-		return fmt.Errorf("browse posts: %w", err)
+		return databaseError("browse posts", err)
 	}
 	if len(posts) == 0 {
 		fmt.Println("No posts found. Follow a feed and run gator agg 1m.")
@@ -52,7 +69,7 @@ func handlerBrowse(s *state, cmd command, user database.User) error {
 		if p.PublishedAt.Valid {
 			date = p.PublishedAt.Time.UTC().Format(time.RFC3339)
 		}
-		fmt.Printf("\n%s\n%s · %s\n%s\n%s\n", p.Title, p.FeedName, date, p.Url, p.Description)
+		fmt.Printf("\n%s\n%s · %s\n%s\n%s\n", cleanText(p.Title, 300), cleanText(p.FeedName, 200), date, cleanText(p.Url, 4096), summary(p.Description))
 	}
 	return nil
 }

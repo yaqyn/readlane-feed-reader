@@ -2,10 +2,13 @@
 package config
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 const configFileName = ".gatorconfig.json"
@@ -31,12 +34,33 @@ func Read() (Config, error) {
 	if err != nil {
 		return cfg, err
 	}
-	b, err := os.ReadFile(p)
+	f, err := os.Open(p)
 	if err != nil {
 		return cfg, fmt.Errorf("read config: %w", err)
 	}
-	if err = json.Unmarshal(b, &cfg); err != nil {
+	defer f.Close()
+	info, err := f.Stat()
+	if err != nil {
+		return cfg, err
+	}
+	if runtime.GOOS != "windows" && info.Mode().Perm()&0o077 != 0 {
+		return cfg, fmt.Errorf("config must be private; run chmod 600 on your config file")
+	}
+	b, err := io.ReadAll(io.LimitReader(f, 65537))
+	if err != nil {
+		return cfg, fmt.Errorf("read config: %w", err)
+	}
+	if len(b) > 65536 {
+		return cfg, fmt.Errorf("config exceeds 64 KiB")
+	}
+	dec := json.NewDecoder(bytes.NewReader(b))
+	dec.DisallowUnknownFields()
+	if err = dec.Decode(&cfg); err != nil {
 		return cfg, fmt.Errorf("decode config: %w", err)
+	}
+	var extra any
+	if err = dec.Decode(&extra); err != io.EOF {
+		return Config{}, fmt.Errorf("config must contain one JSON object")
 	}
 	return cfg, nil
 }
