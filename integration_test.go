@@ -195,6 +195,7 @@ func TestIntegrationWorkerStoresPostsAndCancels(t *testing.T) {
 	if err := aggregate(s, 5*time.Second, true); err != nil {
 		t.Fatal(err)
 	}
+	makeFeedsDue(t, s)
 	if err := aggregate(s, 5*time.Second, true); err != nil {
 		t.Fatal(err)
 	}
@@ -212,6 +213,7 @@ func TestIntegrationWorkerStoresPostsAndCancels(t *testing.T) {
 	if err != nil || len(page) != 1 || page[0].Title != "Unknown date" {
 		t.Fatalf("pagination: %+v %v", page, err)
 	}
+	makeFeedsDue(t, s)
 	// Drain the previous once requests before observing the continuous worker.
 	for len(requested) > 0 {
 		<-requested
@@ -288,6 +290,17 @@ func TestIntegrationWorkerSingletonAndFailedFeedFairness(t *testing.T) {
 	if err != nil || len(posts) != 1 {
 		t.Fatalf("bad feed starved good feed: %+v %v", posts, err)
 	}
+	failed, err := s.db.GetFeedByURL(s.ctx, bad.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if failed.FailureCount != 1 || failed.LastError == "" || !failed.NextFetchAt.After(time.Now().Add(30*time.Second)) {
+		t.Fatalf("retry state was not persisted: %+v", failed)
+	}
+	if _, err = s.db.GetNextFeedToFetch(s.ctx); !errors.Is(err, sql.ErrNoRows) {
+		t.Fatalf("cooldown not enforced: %v", err)
+	}
+
 }
 func TestIntegrationMigrationsReversibleAndIdempotent(t *testing.T) {
 	s := integrationState(t)
@@ -309,6 +322,13 @@ func TestIntegrationMigrationsReversibleAndIdempotent(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err = handlerDoctor(s, command{}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func makeFeedsDue(t *testing.T, s *state) {
+	t.Helper()
+	if _, err := s.conn.ExecContext(s.ctx, "UPDATE feeds SET next_fetch_at = NOW()"); err != nil {
 		t.Fatal(err)
 	}
 }

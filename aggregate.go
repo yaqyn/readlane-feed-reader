@@ -77,7 +77,7 @@ func aggregate(s *state, interval time.Duration, once bool) error {
 func scrapeFeeds(s *state) error {
 	feed, err := s.db.GetNextFeedToFetch(s.ctx)
 	if errors.Is(err, sql.ErrNoRows) {
-		slog.Info("no feeds to collect")
+		slog.Info("no feeds due")
 		return nil
 	}
 	if err != nil {
@@ -88,12 +88,28 @@ func scrapeFeeds(s *state) error {
 		return databaseError("mark feed fetched", err)
 	}
 	slog.Info("fetching feed", "feed_id", feed.ID, "name", feed.Name)
-	rss, err := fetchFeed(s.ctx, feed.Url)
+	rss, meta, err := fetchFeedConditional(s.ctx, feed.Url, feed.Etag, feed.LastModified)
 	if err != nil {
 		if s.ctx.Err() != nil {
 			return s.ctx.Err()
 		}
-		slog.Warn("feed request failed", "feed_id", feed.ID, "error", err)
+		delay := retryDelay(feed.FailureCount)
+		var httpErr *feedHTTPError
+		if errors.As(err, &httpErr) {
+			delay = max(delay, httpErr.RetryAfter)
+		}
+		scheduleErr := s.db.ScheduleFeedFailure(s.ctx, database.ScheduleFeedFailureParams{ID: feed.ID, NextFetchAt: time.Now().UTC().Add(delay), LastError: cleanText(err.Error(), 500)})
+		if scheduleErr != nil {
+			return databaseError("schedule feed retry", scheduleErr)
+		}
+		slog.Warn("feed request failed", "feed_id", feed.ID, "error", err, "retry_in", delay.String())
+		return nil
+	}
+	if rss == nil {
+		if err := s.db.ScheduleFeedSuccess(s.ctx, database.ScheduleFeedSuccessParams{ID: feed.ID, NextFetchAt: time.Now().UTC().Add(time.Minute), Etag: meta.ETag, LastModified: meta.LastModified}); err != nil {
+			return databaseError("schedule unchanged feed", err)
+		}
+		slog.Info("feed unchanged", "feed_id", feed.ID)
 		return nil
 	}
 	inserted := int64(0)
@@ -108,6 +124,17 @@ func scrapeFeeds(s *state) error {
 		}
 		inserted += n
 	}
+	if err := s.db.ScheduleFeedSuccess(s.ctx, database.ScheduleFeedSuccessParams{ID: feed.ID, NextFetchAt: time.Now().UTC().Add(time.Minute), Etag: meta.ETag, LastModified: meta.LastModified}); err != nil {
+		return databaseError("schedule feed", err)
+	}
 	slog.Info("feed collected", "feed_id", feed.ID, "items", len(rss.Channel.Item), "inserted", inserted)
 	return nil
+}
+
+// Failures back off exponentially, persisted across worker restarts.
+func retryDelay(failures int32) time.Duration {
+	if failures < 0 {
+		failures = 0
+	}
+	return time.Minute * time.Duration(1<<min(failures, 8))
 }

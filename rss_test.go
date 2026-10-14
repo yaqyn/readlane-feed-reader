@@ -126,3 +126,36 @@ func TestBadWorkerArguments(t *testing.T) {
 		}
 	}
 }
+
+func TestConditionalFetch(t *testing.T) {
+	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("If-None-Match") == `"version-1"` {
+			w.WriteHeader(http.StatusNotModified)
+			return
+		}
+		w.Header().Set("ETag", `"version-1"`)
+		w.Header().Set("Last-Modified", "Wed, 14 Oct 2026 08:00:00 GMT")
+		fmt.Fprint(w, `<rss><channel><title>Cached</title></channel></rss>`)
+	}))
+	defer s.Close()
+	feed, meta, err := fetchFeedConditional(context.Background(), s.URL, "", "")
+	if err != nil || feed == nil {
+		t.Fatalf("initial fetch: %v", err)
+	}
+	feed, updated, err := fetchFeedConditional(context.Background(), s.URL, meta.ETag, meta.LastModified)
+	if err != nil || feed != nil || updated != meta {
+		t.Fatalf("unchanged fetch: %+v %+v %v", feed, updated, err)
+	}
+}
+func TestRetryAfterAndBackoff(t *testing.T) {
+	now := time.Date(2026, 10, 14, 8, 0, 0, 0, time.UTC)
+	cases := map[string]time.Duration{"120": 2 * time.Minute, "bad": 0, "-1": 0, "99999999": 24 * time.Hour, now.Add(3 * time.Minute).Format(http.TimeFormat): 3 * time.Minute}
+	for raw, want := range cases {
+		if got := retryAfter(raw, now); got != want {
+			t.Errorf("retry after %q: got %s want %s", raw, got, want)
+		}
+	}
+	if retryDelay(0) != time.Minute || retryDelay(1) != 2*time.Minute || retryDelay(30) != 256*time.Minute {
+		t.Fatal("unexpected failure backoff")
+	}
+}

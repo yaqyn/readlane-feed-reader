@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -65,36 +66,77 @@ func validateFeedURL(raw string) error {
 	}
 	return nil
 }
+
+type feedMetadata struct {
+	ETag         string
+	LastModified string
+}
+type feedHTTPError struct {
+	Status     int
+	RetryAfter time.Duration
+}
+
+func (e *feedHTTPError) Error() string { return fmt.Sprintf("feed returned HTTP %d", e.Status) }
+func retryAfter(raw string, now time.Time) time.Duration {
+	if seconds, err := strconv.ParseInt(raw, 10, 32); err == nil && seconds > 0 {
+		return min(time.Duration(seconds)*time.Second, 24*time.Hour)
+	}
+	if date, err := http.ParseTime(raw); err == nil && date.After(now) {
+		return min(date.Sub(now), 24*time.Hour)
+	}
+	return 0
+}
 func fetchFeed(ctx context.Context, feedURL string) (*RSSFeed, error) {
+	feed, _, err := fetchFeedConditional(ctx, feedURL, "", "")
+	return feed, err
+}
+func fetchFeedConditional(ctx context.Context, feedURL, etag, lastModified string) (*RSSFeed, feedMetadata, error) {
 	if err := validateFeedURL(feedURL); err != nil {
-		return nil, err
+		return nil, feedMetadata{}, err
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, feedURL, nil)
 	if err != nil {
-		return nil, err
+		return nil, feedMetadata{}, err
 	}
 	req.Header.Set("User-Agent", "gator")
 	req.Header.Set("Accept", "application/rss+xml, application/xml, text/xml")
+	if etag != "" {
+		req.Header.Set("If-None-Match", etag)
+	}
+	if lastModified != "" {
+		req.Header.Set("If-Modified-Since", lastModified)
+	}
 	resp, err := feedClient.Do(req)
 	if err != nil {
 		var urlErr *url.Error
 		if errors.As(err, &urlErr) {
 			err = urlErr.Err
 		}
-		return nil, fmt.Errorf("fetch feed: %w", err)
+		return nil, feedMetadata{}, fmt.Errorf("fetch feed: %w", err)
 	}
 	defer resp.Body.Close()
+	meta := feedMetadata{ETag: resp.Header.Get("ETag"), LastModified: resp.Header.Get("Last-Modified")}
+	if resp.StatusCode == http.StatusNotModified && (etag != "" || lastModified != "") {
+		if meta.ETag == "" {
+			meta.ETag = etag
+		}
+		if meta.LastModified == "" {
+			meta.LastModified = lastModified
+		}
+		return nil, meta, nil
+	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("feed returned HTTP %d", resp.StatusCode)
+		return nil, meta, &feedHTTPError{Status: resp.StatusCode, RetryAfter: retryAfter(resp.Header.Get("Retry-After"), time.Now())}
 	}
 	b, err := io.ReadAll(io.LimitReader(resp.Body, maxFeedBytes+1))
 	if err != nil {
-		return nil, fmt.Errorf("read feed: %w", err)
+		return nil, feedMetadata{}, fmt.Errorf("read feed: %w", err)
 	}
 	if len(b) > maxFeedBytes {
-		return nil, fmt.Errorf("feed exceeds %d bytes", maxFeedBytes)
+		return nil, feedMetadata{}, fmt.Errorf("feed exceeds %d bytes", maxFeedBytes)
 	}
-	return parseFeed(b, resp.Request.URL)
+	feed, err := parseFeed(b, resp.Request.URL)
+	return feed, meta, err
 }
 
 // Atom is normalized to the same item model as RSS.

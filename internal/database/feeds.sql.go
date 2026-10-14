@@ -15,7 +15,7 @@ import (
 
 const createFeed = `-- name: CreateFeed :one
 INSERT INTO feeds (id, created_at, updated_at, name, url, user_id)
-VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at, updated_at, name, url, user_id, last_fetched_at
+VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, created_at, updated_at, name, url, user_id, last_fetched_at, next_fetch_at, last_success_at, failure_count, last_error, etag, last_modified
 `
 
 type CreateFeedParams struct {
@@ -45,12 +45,18 @@ func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, e
 		&i.Url,
 		&i.UserID,
 		&i.LastFetchedAt,
+		&i.NextFetchAt,
+		&i.LastSuccessAt,
+		&i.FailureCount,
+		&i.LastError,
+		&i.Etag,
+		&i.LastModified,
 	)
 	return i, err
 }
 
 const getFeedByURL = `-- name: GetFeedByURL :one
-SELECT id, created_at, updated_at, name, url, user_id, last_fetched_at FROM feeds WHERE url = $1
+SELECT id, created_at, updated_at, name, url, user_id, last_fetched_at, next_fetch_at, last_success_at, failure_count, last_error, etag, last_modified FROM feeds WHERE url = $1
 `
 
 func (q *Queries) GetFeedByURL(ctx context.Context, url string) (Feed, error) {
@@ -64,12 +70,18 @@ func (q *Queries) GetFeedByURL(ctx context.Context, url string) (Feed, error) {
 		&i.Url,
 		&i.UserID,
 		&i.LastFetchedAt,
+		&i.NextFetchAt,
+		&i.LastSuccessAt,
+		&i.FailureCount,
+		&i.LastError,
+		&i.Etag,
+		&i.LastModified,
 	)
 	return i, err
 }
 
 const getFeeds = `-- name: GetFeeds :many
-SELECT feeds.id, feeds.created_at, feeds.updated_at, feeds.name, feeds.url, feeds.user_id, feeds.last_fetched_at, users.name AS user_name FROM feeds
+SELECT feeds.id, feeds.created_at, feeds.updated_at, feeds.name, feeds.url, feeds.user_id, feeds.last_fetched_at, feeds.next_fetch_at, feeds.last_success_at, feeds.failure_count, feeds.last_error, feeds.etag, feeds.last_modified, users.name AS user_name FROM feeds
 JOIN users ON users.id = feeds.user_id ORDER BY feeds.name, feeds.id
 `
 
@@ -81,6 +93,12 @@ type GetFeedsRow struct {
 	Url           string
 	UserID        uuid.UUID
 	LastFetchedAt sql.NullTime
+	NextFetchAt   time.Time
+	LastSuccessAt sql.NullTime
+	FailureCount  int32
+	LastError     string
+	Etag          string
+	LastModified  string
 	UserName      string
 }
 
@@ -101,6 +119,12 @@ func (q *Queries) GetFeeds(ctx context.Context) ([]GetFeedsRow, error) {
 			&i.Url,
 			&i.UserID,
 			&i.LastFetchedAt,
+			&i.NextFetchAt,
+			&i.LastSuccessAt,
+			&i.FailureCount,
+			&i.LastError,
+			&i.Etag,
+			&i.LastModified,
 			&i.UserName,
 		); err != nil {
 			return nil, err
@@ -117,7 +141,8 @@ func (q *Queries) GetFeeds(ctx context.Context) ([]GetFeedsRow, error) {
 }
 
 const getNextFeedToFetch = `-- name: GetNextFeedToFetch :one
-SELECT id, created_at, updated_at, name, url, user_id, last_fetched_at FROM feeds ORDER BY last_fetched_at ASC NULLS FIRST, id LIMIT 1
+SELECT id, created_at, updated_at, name, url, user_id, last_fetched_at, next_fetch_at, last_success_at, failure_count, last_error, etag, last_modified FROM feeds WHERE next_fetch_at <= NOW()
+ORDER BY last_fetched_at ASC NULLS FIRST, id LIMIT 1
 `
 
 func (q *Queries) GetNextFeedToFetch(ctx context.Context) (Feed, error) {
@@ -131,15 +156,59 @@ func (q *Queries) GetNextFeedToFetch(ctx context.Context) (Feed, error) {
 		&i.Url,
 		&i.UserID,
 		&i.LastFetchedAt,
+		&i.NextFetchAt,
+		&i.LastSuccessAt,
+		&i.FailureCount,
+		&i.LastError,
+		&i.Etag,
+		&i.LastModified,
 	)
 	return i, err
 }
 
 const markFeedFetched = `-- name: MarkFeedFetched :exec
-UPDATE feeds SET last_fetched_at = NOW(), updated_at = NOW() WHERE id = $1
+UPDATE feeds SET last_fetched_at = NOW(), updated_at = NOW(), next_fetch_at = NOW() + INTERVAL '1 minute' WHERE id = $1
 `
 
 func (q *Queries) MarkFeedFetched(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.ExecContext(ctx, markFeedFetched, id)
+	return err
+}
+
+const scheduleFeedFailure = `-- name: ScheduleFeedFailure :exec
+UPDATE feeds SET next_fetch_at = $2, failure_count = LEAST(failure_count + 1, 30),
+last_error = $3 WHERE id = $1
+`
+
+type ScheduleFeedFailureParams struct {
+	ID          uuid.UUID
+	NextFetchAt time.Time
+	LastError   string
+}
+
+func (q *Queries) ScheduleFeedFailure(ctx context.Context, arg ScheduleFeedFailureParams) error {
+	_, err := q.db.ExecContext(ctx, scheduleFeedFailure, arg.ID, arg.NextFetchAt, arg.LastError)
+	return err
+}
+
+const scheduleFeedSuccess = `-- name: ScheduleFeedSuccess :exec
+UPDATE feeds SET next_fetch_at = $2, last_success_at = NOW(), failure_count = 0,
+last_error = '', etag = $3, last_modified = $4 WHERE id = $1
+`
+
+type ScheduleFeedSuccessParams struct {
+	ID           uuid.UUID
+	NextFetchAt  time.Time
+	Etag         string
+	LastModified string
+}
+
+func (q *Queries) ScheduleFeedSuccess(ctx context.Context, arg ScheduleFeedSuccessParams) error {
+	_, err := q.db.ExecContext(ctx, scheduleFeedSuccess,
+		arg.ID,
+		arg.NextFetchAt,
+		arg.Etag,
+		arg.LastModified,
+	)
 	return err
 }

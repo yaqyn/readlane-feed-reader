@@ -46,6 +46,9 @@ func handlerFeeds(s *state, cmd command) error {
 	}
 	for _, feed := range feeds {
 		fmt.Printf("* %s\n  %s\n  Added by %s\n", cleanText(feed.Name, 200), cleanText(feed.Url, 4096), cleanText(feed.UserName, 100))
+		if feed.FailureCount > 0 {
+			fmt.Printf("  Retry scheduled: %s (%d failures)\n", feed.NextFetchAt.UTC().Format(time.RFC3339), feed.FailureCount)
+		}
 	}
 	return nil
 }
