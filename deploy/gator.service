@@ -1,0 +1,26 @@
+[Unit]
+Description=Gator RSS and Atom aggregation worker
+After=network-online.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/gator agg 1m
+Environment=GATOR_LOG_FORMAT=json
+Restart=on-failure
+RestartSec=15s
+TimeoutStopSec=15s
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=true
+MemoryDenyWriteExecute=true
+MemoryMax=256M
+
+[Install]
+WantedBy=default.target
