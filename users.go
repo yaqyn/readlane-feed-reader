@@ -34,3 +34,21 @@ func handlerReset(s *state, cmd command) error {
 	fmt.Println("Database reset")
 	return nil
 }
+
+func handlerUsers(s *state, cmd command) error {
+	if len(cmd.args) != 0 {
+		return fmt.Errorf("usage: gator users")
+	}
+	users, err := s.db.GetUsers(s.ctx)
+	if err != nil {
+		return fmt.Errorf("list users: %w", err)
+	}
+	for _, user := range users {
+		suffix := ""
+		if user.Name == s.cfg.CurrentUserName {
+			suffix = " (current)"
+		}
+		fmt.Printf("* %s%s\n", user.Name, suffix)
+	}
+	return nil
+}

@@ -69,6 +69,7 @@ func run() error {
 	c.register("login", handlerLogin)
 	c.register("register", handlerRegister)
 	c.register("reset", handlerReset)
+	c.register("users", handlerUsers)
 	return c.run(s, command{name: os.Args[1], args: os.Args[2:]})
 }
 func main() {
