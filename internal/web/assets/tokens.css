@@ -1,0 +1,25 @@
+/* Generated from DESIGN.md by scripts/design-tokens.py. */
+:root {
+  --color-primary: #6253D9;
+  --color-primary-hover: #5042BD;
+  --color-background: #F5F6FB;
+  --color-surface: #FFFFFF;
+  --color-ink: #20253B;
+  --color-muted: #626B80;
+  --color-border: #DADDE8;
+  --color-tint: #EAE7FA;
+  --color-danger: #A73446;
+  --color-success: #25664E;
+  --color-scrollbar: #ABB0C6;
+  --color-scrollbar-hover: #727A98;
+  --color-terminal-ink-dark: #F0EFFA;
+  --color-terminal-muted-dark: #B3B1C8;
+  --color-terminal-primary-dark: #AEA5FF;
+  --color-terminal-selected-dark: #302B4D;
+  --radius-sm: 0.5rem;
+  --radius-default: 0.75rem;
+  --radius-lg: 1.25rem;
+  --page-max: 80rem;
+  --reading-max: 44rem;
+  --section-gap: 2.5rem;
+}

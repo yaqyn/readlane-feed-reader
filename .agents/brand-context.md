@@ -8,12 +8,12 @@
 - **Website**: None published.
 
 ## Audience
-- **Primary audience**: Developers and independent readers comfortable running a local tool.
+- **Primary audience**: Developers and independent readers comfortable running a local tool. The terminal is the primary product; the browser is a companion.
 - **Key problem**: Keeping up with chosen publications without juggling sites or surrendering control of the reading workflow.
 - **Their language**: Feeds, sources, posts, reading list. These are product terms inferred from the working app, not user-research quotations.
 
 ## Positioning
-- **Differentiation**: PostgreSQL-backed collection, a scriptable CLI, and a local web reading surface sharing the same data.
+- **Differentiation**: PostgreSQL-backed collection, a keyboard-driven terminal reader, scriptable commands, and a complementary local web reading surface sharing the same data.
 - **Adjacent products**: Feedly, Inoreader, and self-hosted feed readers; these are category context, not a researched feature comparison.
 - **Market position**: A focused tool for a trusted local environment. No pricing or monetization is established.
 
