@@ -1,4 +1,4 @@
-![Readlane — a violet reading lane connecting floating book islands and pages.](readme-assets/readlane-cover.webp)
+![Readlane — an imaginative violet pixel world with a terminal dollar prompt and cursor.](readme-assets/readlane-cover.webp)
 
 # Readlane — a terminal-first feed reader
 

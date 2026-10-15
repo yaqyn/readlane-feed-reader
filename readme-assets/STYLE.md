@@ -8,8 +8,8 @@ constants, web CSS tokens, and the palette of the canonical README SVG icons.
 - Ink: `#20253B`; supporting text: `#626B80`; selection: `#EAE7FA`.
 - Terminal dark variants retain readable violet, ink, and supporting text.
 
-The 2172×724 README cover imagines a violet path connecting floating book
-islands and pages, with the large dark name **Readlane** on porcelain.
+The 2172×724 README cover depicts an abstract violet pixel world on a dark
+canvas, with a large **Readlane** wordmark, dollar prompt, and block cursor.
 It was generated using the built-in image tool. See the [brand guide](../docs/brand.md)
 for its prompt and production record. The WebP is lossless; no resize or crop
 was applied. Its only descriptive metadata is:
