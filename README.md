@@ -1,4 +1,4 @@
-![Readlane — Your feeds. Your pace. Large terminal-style lettering with a violet prompt and cursor.](readme-assets/readlane-cover.webp)
+![Readlane — a violet reading lane connecting floating book islands and pages.](readme-assets/readlane-cover.webp)
 
 # Readlane — a terminal-first feed reader
 

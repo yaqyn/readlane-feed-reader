@@ -14,10 +14,10 @@ and palette. Marketing should show those working behaviors and avoid claims
 about unread tracking, full-article extraction, hosted accounts, or readership
 numbers that the application does not support.
 
-The cover uses a large monospace wordmark, violet prompt and block cursor,
-and a high-contrast tagline. Small interface text is deliberately omitted so
-the artwork stays readable at README widths. It is brand artwork, not a product
-screenshot. Product text uses concrete labels:
+The cover imagines a violet reading lane connecting floating book islands and
+pages. A large dark wordmark sits on a quiet porcelain background. The artwork
+uses no terminal interface or small text; the application remains terminal-first.
+Product text uses concrete labels:
 Reading list, Sources, Search, Feed summary, and Read original.
 
 `DESIGN.md` is the durable visual contract and token source. The default web
@@ -29,7 +29,7 @@ fonts; terminals use their user's own typeface. OFL license files are bundled.
 
 The built-in image generation tool produced the cover. The final prompt was:
 
-> Use case: ads-marketing. Asset type: revised Readlane README cover. Edit the supplied cover for excellent readability when displayed at only 800 pixels wide. Replace the dense multi-column reading list entirely. Keep the exact name "Readlane" and exact tagline "Your feeds. Your pace." Keep terminal-first identity, midnight background and violet palette. New composition: approximately 3:1 wide landscape, completely flat solid near-black #11121C canvas with a single oversized central terminal-style wordmark reading "> Readlane" in very bold crisp monospaced type, bright near-white #FAFAFF, the > glyph violet #B9B0FF, and a large solid violet block cursor immediately following the name. Below, the exact tagline "Your feeds. Your pace." in large medium-weight near-white type, high contrast, approximately one third the height of the wordmark. Very generous breathing room and balanced central alignment. Wordmark fills about 75% of the canvas width. Terminal feel comes ONLY from the monospace wordmark, > prompt and solid cursor, not from miniature UI. Remove ALL existing reading-list panels, rows, navigation, small commands, publisher names, timestamps, rules and footer hints. NO other text beyond "> Readlane" and "Your feeds. Your pace.". No texture, no scanlines, no fading, no highlights crossing letters, no blur, no glow, no gradients, no perspective, no 3D, no browser chrome, no decorative patterns, no watermark. Perfect spelling, clean letterforms, premium developer-tool typographic cover. Opaque background.
+> Use case: ads-marketing. Asset type: imaginative illustrated README cover for Readlane, a personal RSS and Atom feed reader. Create a completely new visual direction, wide landscape approximately 3:1. A surreal editorial paper landscape: an elegant iris-violet pathway curves through floating ivory pages and small sculptural open-book islands, gathering separate reading streams into one calm lane. Tactile matte paper forms, precise soft shadows, airy porcelain background #F5F6FB, restrained violet #6253D9 and lilac #EAE7FA with tiny warm apricot accents. Art occupies the right half and lower-right edge, with delightful imaginative depth, a clear coherent silhouette, beautifully crafted premium book-jacket art. Left half is quiet clean negative space containing ONLY the exact name "Readlane", spelled R-e-a-d-l-a-n-e, in extremely clear, large, bold humanist sans-serif dark ink #20253B. Use a normal recognizable lowercase l, not a slab or terminal glyph. The name must be the first thing read and occupy about 45% of total image width, high contrast with no illustration behind it. No tagline or small text. No terminal, no code, no cursor, no command prompt, no UI, no browser, no device, no neon, no watermark, no fake lettering on pages. Keep the name readable when the entire image is reduced to 600 pixels wide. Imaginative, inviting, sophisticated, calm; editorial illustration rather than a software screenshot. Opaque background.
 
 The selected PNG was inspected for spelling and composition, then converted
 without resizing or cropping:
@@ -44,7 +44,7 @@ magick compare -metric AE source.png readlane-cover.webp null:
 exiftool -G1 -a -s readlane-cover.webp
 ```
 
-An 800-pixel-wide preview was inspected for text readability.
+A 600-pixel-wide preview was inspected for text readability.
 The pixel comparison reported **0 differences**. ExifTool confirmed a lossless
 WebP at 2172×724 with only the two author-credit fields as descriptive metadata.
 Structural image properties and filesystem timestamps are not embedded creator

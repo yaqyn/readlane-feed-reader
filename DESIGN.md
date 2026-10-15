@@ -62,8 +62,8 @@
 
 ### Creative North Star
 A quiet reading lane inside the terminal: aligned monospace text, a violet
-selection, and visible keyboard controls. The cover uses an oversized monospace
-wordmark, prompt, and block cursor for readability. Product screens stay quiet so the
+selection, and visible keyboard controls. The cover imagines a violet path through floating book
+islands, with a large dark wordmark on porcelain. Product screens stay quiet so the
 stories carry the attention.
 
 ### Product context and register
