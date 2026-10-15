@@ -50,7 +50,26 @@ jobs:
       - name: Vet, integration tests, generated queries and vulnerability scan
         run: make verify
       - name: Build and verify the executable on a fresh database
-        run: make smoke VERSION=${{ github.sha }}
+        env:
+          READLANE_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          # Use the service's matching clients instead of the runner's older pg_dump.
+          client_bin="$RUNNER_TEMP/readlane-postgres-bin"
+          mkdir -p "$client_bin"
+          for tool in psql pg_dump pg_restore; do
+            cat > "$client_bin/$tool" <<'CLIENT'
+          #!/usr/bin/env bash
+          set -euo pipefail
+          exec docker exec -i \
+            -e PGHOST -e PGPORT -e PGDATABASE -e PGUSER -e PGPASSWORD \
+            -e PGSSLMODE -e PGOPTIONS \
+            "$READLANE_POSTGRES_CONTAINER" "$(basename "$0")" "$@"
+          CLIENT
+            chmod +x "$client_bin/$tool"
+          done
+          export PATH="$client_bin:$PATH"
+          pg_dump --version
+          make smoke VERSION=${{ github.sha }}
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: readlane-linux-amd64
