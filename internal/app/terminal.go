@@ -135,6 +135,9 @@ func (m terminalModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		m.posts = msg.posts
 		m.sources = msg.sources
+		if len(m.sources) > 200 {
+			m.sources = m.sources[:200]
+		}
 		m.total = msg.total
 		m.page = msg.page
 		m.selected = min(m.selected, max(0, len(m.posts)-1))
@@ -298,12 +301,22 @@ func (m terminalModel) View() string {
 		readingTab = brand.Render("Reading list")
 	}
 	nav := readingTab + "    " + sourceTab + quiet.Render("    tab to switch")
-	caption := fmt.Sprintf("%d posts", m.total)
+	noun := "posts"
+	if m.total == 1 {
+		noun = "post"
+	}
+	caption := fmt.Sprintf("%d %s  Page %d/%d", m.total, noun, m.page, max(1, int((m.total+terminalPageSize-1)/terminalPageSize)))
 	if m.source.Valid {
 		caption += " from " + cleanText(m.sourceName, 100)
 	}
 	if m.input.Value() != "" {
 		caption += " matching “" + cleanText(m.input.Value(), 200) + "”"
+	}
+	if m.mode == "sources" {
+		caption = fmt.Sprintf("%d followed sources", len(m.sources))
+		if len(m.sources) == 200 {
+			caption += " shown; the CLI lists the complete registry"
+		}
 	}
 	if m.loading {
 		caption = "Gathering your reading list…"
@@ -397,6 +410,12 @@ func (m terminalModel) View() string {
 		footer = "↑↓ move  enter read  / search  tab sources  n/p pages  q quit"
 		if width < 60 {
 			footer = "↑↓ move  enter read  / find  q quit"
+		}
+		if m.mode == "sources" {
+			footer = "↑↓ choose  enter filter  tab reading  a all  q quit"
+			if width < 60 {
+				footer = "↑↓ choose  enter filter  q quit"
+			}
 		}
 		if m.mode == "detail" {
 			footer = "↑↓ scroll  esc back  q quit"
