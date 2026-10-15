@@ -16,9 +16,11 @@ import urllib.parse
 import uuid
 
 
-def execute(args, env=None, input_text=None, check=True):
+def execute(args, env=None, input_text=None, check=True, input_file=None, output_file=None):
     result = subprocess.run(
-        args, env=env, input=input_text, capture_output=True, text=True, timeout=45
+        args, env=env, input=input_text, stdin=input_file,
+        stdout=output_file or subprocess.PIPE, stderr=subprocess.PIPE,
+        text=True, timeout=45
     )
     if check and result.returncode:
         raise RuntimeError(args[0] + " failed: " + result.stderr)
@@ -122,8 +124,15 @@ def main():
             require(before == "1|1|1|1", "unexpected fixture counts: " + before)
 
             backup = pathlib.Path(directory) / "backup.dump"
-            execute(["pg_dump", "--format=custom", "--file", str(backup)], database_env)
-            restore_sql = execute(["pg_restore", "--no-owner", "--no-acl", "--file=-", str(backup)]).stdout
+            # Stream archives so matching clients may run in the CI service
+            # container without needing access to the host's temporary paths.
+            with backup.open("wb") as archive:
+                execute(["pg_dump", "--format=custom"], database_env, output_file=archive)
+            with backup.open("rb") as archive:
+                restore_sql = execute(
+                    ["pg_restore", "--no-owner", "--no-acl", "--file=-"],
+                    input_file=archive,
+                ).stdout
             execute(
                 ["psql", "-X", "--set", "ON_ERROR_STOP=on", "--single-transaction"],
                 client_environment(dsn(restore)), input_text=restore_sql,
