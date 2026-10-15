@@ -64,7 +64,7 @@
 A quiet reading lane inside the terminal: aligned monospace text, a violet
 selection, and visible keyboard controls. The cover imagines a pixel reading world
 inside a dark terminal: articles join a violet lane, with a large wordmark,
-dollar-prefixed command, and clear RSS/Atom purpose line. Product screens stay quiet so the
+integrated dollar prompt, and clear RSS/Atom purpose line. Product screens stay quiet so the
 stories carry the attention.
 
 ### Product context and register

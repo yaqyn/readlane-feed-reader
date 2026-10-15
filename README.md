@@ -1,4 +1,4 @@
-![Readlane — RSS & Atom feeds. Read in your terminal. Pixel-art articles join a violet reading lane beside the dollar-prefixed readlane command.](readme-assets/readlane-cover.webp)
+![Readlane — RSS & Atom feeds. Read in your terminal. Pixel-art articles join a violet reading lane beside the unified dollar-prefixed Readlane title.](readme-assets/readlane-cover.webp)
 
 # Readlane — a terminal-first feed reader
 
