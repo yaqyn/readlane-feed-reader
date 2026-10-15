@@ -4,7 +4,7 @@ After=network-online.target
 
 [Service]
 Type=simple
-ExecStart=%h/.local/bin/readlane agg 1m
+ExecStart=%h/.local/bin/readlane collect 1m
 Environment=READLANE_LOG_FORMAT=json
 Restart=on-failure
 RestartSec=15s

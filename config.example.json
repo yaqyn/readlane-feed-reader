@@ -1,4 +1,4 @@
 {
-  "db_url": "postgres://your-user@/gator?host=/var/run/postgresql&sslmode=disable",
+  "db_url": "postgres://your-user@/readlane?host=/var/run/postgresql&sslmode=disable",
   "current_user_name": ""
 }

@@ -106,14 +106,16 @@ def main():
             env = os.environ.copy()
             env["READLANE_CONFIG"] = str(config)
             env.pop("READLANE_DATABASE_URL", None)
+            env.pop("GATOR_DATABASE_URL", None)
+            env.pop("GATOR_CONFIG", None)
             feed_url = "http://127.0.0.1:" + str(server.server_port) + "/feed"
             commands = (
                 ["migrate"], ["migrate"], ["doctor"], ["register", "verification"],
-                ["addfeed", "Fixture", feed_url], ["agg", "5s", "--once"],
+                ["addfeed", "Fixture", feed_url], ["collect", "5s", "--once"],
             )
             for args in commands:
                 execute([binary, *args], env)
-            browsed = execute([binary, "browse", "2"], env).stdout
+            browsed = execute([binary, "read", "2"], env).stdout
             require("Binary verification post" in browsed and "Stored and restored" in browsed, "browse did not show the collected fixture")
             database_env = client_environment(dsn(deployment))
             before = sql(counts, database_env)
