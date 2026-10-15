@@ -6,7 +6,9 @@ constants, web CSS tokens, and the palette of the canonical README SVG icons.
 - Primary violet: `#6253D9`; hover: `#5042BD`.
 - Porcelain background: `#F5F6FB`; reading surface: `#FFFFFF`.
 - Ink: `#20253B`; supporting text: `#626B80`; selection: `#EAE7FA`.
-- Terminal dark variants retain readable violet, ink, and supporting text.
+- Terminal canvas: `#0C0F18`, with lavender `#AEA5FF` accents, pale ink
+  `#F0EFFA`, and violet `#302B4D` selection. The full-screen reader owns its
+  background so the cover identity survives different terminal themes.
 
 The 2172×724 README cover depicts pixel-art article towers and blog posts
 joining a violet reading lane. The unified **$ Readlane** wordmark

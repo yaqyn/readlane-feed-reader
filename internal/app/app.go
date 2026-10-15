@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/url"
@@ -63,6 +64,7 @@ func registeredCommands() commands {
 	c.register("doctor", handlerDoctor)
 	c.register("serve", handlerServe)
 	c.register("tui", middlewareLoggedIn(handlerTerminal))
+	c.register("launch", middlewareLoggedIn(handlerLaunch))
 	return c
 }
 func handlerLogin(s *state, cmd command) error {
@@ -85,6 +87,7 @@ Your feeds. Your pace.
 Usage: readlane <command> [arguments]
 
 Start here
+  launch                          Open the reader and collect feeds every minute
   tui                             Open the interactive terminal reader
   migrate                         Prepare or update the database
   register <name>                 Create and select a local reader
@@ -137,7 +140,7 @@ func runCLI(ctx context.Context, args []string) error {
 		return fmt.Errorf("unknown command %q; use readlane help", cleanText(args[0], 100))
 	}
 	cmd := command{name: args[0], args: args[1:]}
-	if cmd.name != "agg" && cmd.name != "collect" && cmd.name != "serve" && cmd.name != "tui" {
+	if cmd.name != "agg" && cmd.name != "collect" && cmd.name != "serve" && cmd.name != "tui" && cmd.name != "launch" {
 		timeout := 15 * time.Second
 		if cmd.name == "fetch" || cmd.name == "preview" {
 			timeout = 35 * time.Second
@@ -153,9 +156,29 @@ func runCLI(ctx context.Context, args []string) error {
 	if cmd.name == "fetch" || cmd.name == "preview" {
 		return c.run(&state{ctx: ctx}, cmd)
 	}
+	interactive := cmd.name == "tui" || cmd.name == "launch"
+	if interactive {
+		if len(cmd.args) != 0 {
+			return fmt.Errorf("usage: readlane %s", cmd.name)
+		}
+		if !terminalAvailable() {
+			return fmt.Errorf("the interactive reader needs a terminal; use readlane read for plain output")
+		}
+	}
 	cfg, err := config.Read()
+	newConfig := false
 	if err != nil {
-		return err
+		if !interactive || !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+		cfg.DBURL = config.Env("DATABASE_URL")
+		if cfg.DBURL == "" {
+			cfg.DBURL, err = defaultLocalURL()
+			if err != nil {
+				return err
+			}
+		}
+		newConfig = true
 	}
 	dbURL := cfg.DBURL
 	if override := config.Env("DATABASE_URL"); override != "" {
@@ -174,11 +197,35 @@ func runCLI(ctx context.Context, args []string) error {
 	conn.SetMaxIdleConns(2)
 	conn.SetConnMaxLifetime(30 * time.Minute)
 	pingCtx, pingCancel := context.WithTimeout(ctx, 5*time.Second)
-	defer pingCancel()
-	if err = conn.PingContext(pingCtx); err != nil {
+	err = conn.PingContext(pingCtx)
+	pingCancel()
+	_, managed := managedLocalRoot(dbURL)
+	if err != nil && interactive && managed {
+		startupCtx, cancel := context.WithTimeout(ctx, 45*time.Second)
+		defer cancel()
+		if err := startLocalPostgres(startupCtx, dbURL); err != nil {
+			return err
+		}
+		if err := ensureLocalDatabase(startupCtx, dbURL); err != nil {
+			return err
+		}
+		err = conn.PingContext(startupCtx)
+	}
+	if err != nil {
 		return fmt.Errorf("database unavailable; check configuration, credentials and PostgreSQL service")
 	}
-	return c.run(&state{cfg: &cfg, db: database.New(conn), conn: conn, ctx: ctx}, cmd)
+	if newConfig {
+		if err := config.Save(cfg); err != nil {
+			return fmt.Errorf("save reading configuration: %w", err)
+		}
+	}
+	s := &state{cfg: &cfg, db: database.New(conn), conn: conn, ctx: ctx}
+	if interactive && managed {
+		if err := prepareLocalReader(s); err != nil {
+			return err
+		}
+	}
+	return c.run(s, cmd)
 }
 func run() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

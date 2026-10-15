@@ -1,11 +1,13 @@
 VERSION ?= $(shell git describe --always --dirty 2>/dev/null || echo dev)
 APP_PACKAGE := github.com/yaqyn/readlane-feed-reader/internal/app
 
-.PHONY: build install test integration vet generate check-generated audit verify smoke web-check design-check
+.PHONY: build install test integration vet generate check-generated audit verify smoke web-check design-check startup-check
 build:
 	CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X $(APP_PACKAGE).Version=$(VERSION)" -o readlane ./cmd/readlane
 install: build
 	install -Dm755 readlane "$(HOME)/.local/bin/readlane"
+startup-check: build
+	python3 scripts/verify-startup.py ./readlane ./readlane ./launch
 test:
 	go test -race ./...
 integration:

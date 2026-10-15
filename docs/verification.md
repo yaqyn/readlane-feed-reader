@@ -1,5 +1,30 @@
 # Verification record
 
+## One-command launcher (2026-10-15)
+
+`./launch` builds the checkout and invokes `readlane launch`, which starts
+collection and the interactive reader together. The startup PTY smoke check
+also exercised this launcher after stopping its disposable database, confirmed
+private collector logging, and verified clean exit. `make startup-check` includes
+that path. Race tests, vet, generated SQL/token checks, the vulnerability scan,
+and companion DOM tests were run before publication.
+
+## Automatic local startup (2026-10-15)
+
+`python3 scripts/verify-startup.py ./readlane ~/.local/bin/readlane` passed
+against an isolated temporary cluster. The checkout binary opened from another
+working directory with no config, initialized PostgreSQL, applied migrations,
+created and selected a reader, saved mode-600 configuration, and exited cleanly.
+After explicitly stopping that test cluster, the installed `readlane tui`
+restarted it and opened the same library. Piped help created no configuration.
+The test cluster was stopped and removed afterward. `make startup-check`
+repeats these checks with the checkout binary.
+
+The installed command also opened the existing `kahya` library with 32 posts.
+`go test -race ./...`, `go vet ./...`, design-token drift, and diff checks passed.
+Custom-server routing exclusion is covered by unit tests. This startup check
+requires PostgreSQL tools; it does not install system packages.
+
 ## Readlane rebrand and interface work (2026-10-15)
 
 Readlane is terminal-first. The rebrand preserves existing configuration and

@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+# Build the checkout, then let Readlane own setup and process cleanup.
+set -euo pipefail
+project_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+cd "$project_root"
+if ! command -v go >/dev/null; then
+  echo 'Readlane needs Go to build this checkout. Install Go, then run ./launch again.' >&2
+  exit 1
+fi
+build_path="$(mktemp "$project_root/.readlane-build.XXXXXX")"
+trap 'rm -f -- "$build_path"' EXIT
+version="$(git describe --always --dirty 2>/dev/null || echo dev)"
+echo 'Building Readlane…' >&2
+CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X github.com/yaqyn/readlane-feed-reader/internal/app.Version=$version" -o "$build_path" ./cmd/readlane
+mv -f -- "$build_path" "$project_root/readlane"
+trap - EXIT
+if [[ $# -eq 0 ]]; then
+  set -- launch
+fi
+exec "$project_root/readlane" "$@"

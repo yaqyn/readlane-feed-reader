@@ -29,7 +29,9 @@ type terminalData struct {
 	err     error
 }
 type searchDue struct{ seq int }
+type terminalPulse struct{}
 type terminalModel struct {
+	helpOffset                                         int
 	state                                              *state
 	user                                               database.User
 	width, height, selected, sourceSelected, page, seq int
@@ -41,6 +43,8 @@ type terminalModel struct {
 	total                                              int64
 	input                                              textinput.Model
 	searching, loading                                 bool
+	help, reducedMotion                                bool
+	frame                                              int
 	err                                                error
 	detail                                             viewport.Model
 }
@@ -51,7 +55,7 @@ func newTerminalModel(s *state, user database.User) terminalModel {
 	input.CharLimit = 200
 	input.Prompt = "/ "
 	input.Width = 48
-	return terminalModel{state: s, user: user, width: 80, height: 24, mode: "reading", page: 1, input: input, loading: true, detail: viewport.New(72, 12)}
+	return terminalModel{state: s, user: user, width: 80, height: 24, mode: "reading", page: 1, input: input, loading: true, reducedMotion: os.Getenv("READLANE_REDUCED_MOTION") == "1", detail: viewport.New(72, 12)}
 }
 func terminalAvailable() bool {
 	in, e := os.Stdin.Stat()
@@ -74,7 +78,13 @@ func handlerTerminal(s *state, cmd command, user database.User) error {
 	}
 	return err
 }
-func (m terminalModel) Init() tea.Cmd { return m.load() }
+func (m terminalModel) Init() tea.Cmd { return tea.Batch(m.load(), m.pulse()) }
+func (m terminalModel) pulse() tea.Cmd {
+	if m.reducedMotion || !m.loading {
+		return nil
+	}
+	return tea.Tick(100*time.Millisecond, func(time.Time) tea.Msg { return terminalPulse{} })
+}
 func (m terminalModel) load() tea.Cmd {
 	return func() tea.Msg {
 		result := terminalData{seq: m.seq, page: m.page}
@@ -94,26 +104,37 @@ func (m terminalModel) load() tea.Cmd {
 		return result
 	}
 }
-func (m *terminalModel) reload() tea.Cmd { m.seq++; m.loading = true; m.err = nil; return m.load() }
+func (m *terminalModel) reload() tea.Cmd {
+	m.seq++
+	m.loading = true
+	m.err = nil
+	return tea.Batch(m.load(), m.pulse())
+}
 func (m *terminalModel) prepareDetail() {
 	if m.selected >= len(m.posts) {
 		return
 	}
 	post := m.posts[m.selected]
-	width := max(20, min(78, m.width-10))
-	m.detail.Width = max(20, m.width-8)
-	m.detail.Height = max(3, m.height-11)
+	width := max(20, min(72, m.width-10))
+	m.detail.Width = max(20, m.width-4)
+	m.detail.Height = max(3, m.height-10)
 	date := "Publication date unavailable"
 	if post.PublishedAt.Valid {
 		date = post.PublishedAt.Time.UTC().Format("02 January 2006, 15:04 UTC")
 	}
-	title := lipgloss.NewStyle().Bold(true).Width(width).Render(cleanText(post.Title, 300))
+	title := lipgloss.NewStyle().Foreground(lipgloss.Color(brandTerminalPrimaryDark)).Bold(true).Width(width).Render(cleanText(post.Title, 300))
 	content := title + "\n\n" + cleanText(post.FeedName, 200) + "\n" + date + "\n\n" + "Feed summary\n\n" + ansi.Wrap(plainText(post.Description, 12000), width, "") + "\n\nOriginal article\n" + ansi.Wrap(cleanText(post.Url, 4096), width, "")
 	m.detail.SetContent(content)
 	m.detail.GotoTop()
 }
 func (m terminalModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case terminalPulse:
+		if !m.loading || m.reducedMotion {
+			return m, nil
+		}
+		m.frame++
+		return m, m.pulse()
 	case tea.WindowSizeMsg:
 		oldOffset := m.detail.YOffset
 		m.width = msg.Width
@@ -153,6 +174,21 @@ func (m terminalModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if key == "ctrl+c" {
 			return m, tea.Quit
 		}
+		if m.help {
+			if key == "q" {
+				return m, tea.Quit
+			}
+			if key == "down" || key == "j" {
+				m.helpOffset = min(10, m.helpOffset+1)
+			}
+			if key == "up" || key == "k" {
+				m.helpOffset = max(0, m.helpOffset-1)
+			}
+			if key == "esc" || key == "?" {
+				m.help = false
+			}
+			return m, nil
+		}
 		if m.searching {
 			switch key {
 			case "esc":
@@ -175,12 +211,21 @@ func (m terminalModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.seq++
 				m.loading = true
 				seq := m.seq
-				return m, tea.Batch(cmd, tea.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return searchDue{seq: seq} }))
+				return m, tea.Batch(cmd, m.pulse(), tea.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return searchDue{seq: seq} }))
 			}
 			return m, cmd
 		}
 		if key == "q" {
 			return m, tea.Quit
+		}
+		if key == "?" {
+			m.help = true
+			m.helpOffset = 0
+			return m, nil
+		}
+		if key == "m" {
+			m.reducedMotion = !m.reducedMotion
+			return m, m.pulse()
 		}
 		if m.mode == "detail" {
 			if key == "esc" || key == "backspace" || key == "left" {
@@ -196,7 +241,7 @@ func (m terminalModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.mode = "reading"
 			m.searching = true
 			return m, m.input.Focus()
-		case "tab":
+		case "tab", "shift+tab":
 			if m.mode == "sources" {
 				m.mode = "reading"
 			} else {
@@ -216,6 +261,20 @@ func (m terminalModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.page = 1
 			m.mode = "reading"
 			return m, m.reload()
+		case "home", "g":
+			if m.mode == "sources" {
+				m.sourceSelected = 0
+			} else {
+				m.selected = 0
+			}
+		case "end", "G":
+			if m.mode == "sources" {
+				m.sourceSelected = len(m.sources)
+			} else {
+				m.selected = max(0, len(m.posts)-1)
+			}
+		case "esc":
+			m.mode = "reading"
 		case "down", "j":
 			if m.mode == "sources" {
 				m.sourceSelected = min(m.sourceSelected+1, len(m.sources))
@@ -229,12 +288,19 @@ func (m terminalModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.selected = max(m.selected-1, 0)
 			}
 		case "right", "n", "pgdown":
+			if m.mode == "sources" && key == "right" {
+				return m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+			}
 			if m.mode == "reading" && int64(m.page*terminalPageSize) < m.total && !m.loading {
 				m.page++
 				m.selected = 0
 				return m, m.reload()
 			}
 		case "left", "p", "pgup":
+			if m.mode == "sources" && key == "left" {
+				m.mode = "reading"
+				return m, nil
+			}
 			if m.mode == "reading" && m.page > 1 && !m.loading {
 				m.page--
 				m.selected = 0
@@ -270,7 +336,7 @@ func (m terminalModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.seq++
 			m.loading = true
 			seq := m.seq
-			return m, tea.Batch(cmd, tea.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return searchDue{seq: seq} }))
+			return m, tea.Batch(cmd, m.pulse(), tea.Tick(300*time.Millisecond, func(time.Time) tea.Msg { return searchDue{seq: seq} }))
 		}
 		return m, cmd
 	}
@@ -278,18 +344,19 @@ func (m terminalModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 func (m terminalModel) View() string {
 	width := max(16, m.width-4)
-	height := max(4, m.height-9)
-	accent := lipgloss.AdaptiveColor{Light: brandPrimary, Dark: brandTerminalPrimaryDark}
-	ink := lipgloss.AdaptiveColor{Light: brandInk, Dark: brandTerminalInkDark}
-	muted := lipgloss.AdaptiveColor{Light: brandMuted, Dark: brandTerminalMutedDark}
-	tint := lipgloss.AdaptiveColor{Light: brandTint, Dark: brandTerminalSelectedDark}
+	height := max(4, m.height-10)
+	accent := lipgloss.Color(brandTerminalPrimaryDark)
+	ink := lipgloss.Color(brandTerminalInkDark)
+	muted := lipgloss.Color(brandTerminalMutedDark)
+	tint := lipgloss.Color(brandTerminalSelectedDark)
+	canvas := lipgloss.Color(brandTerminalBackground)
 	brand := lipgloss.NewStyle().Foreground(accent).Bold(true)
 	quiet := lipgloss.NewStyle().Foreground(muted)
-	bodyStyle := lipgloss.NewStyle().Width(width).Height(height).MaxHeight(height).Foreground(ink)
+	bodyStyle := lipgloss.NewStyle().Width(width).Height(height).MaxHeight(height).Foreground(ink).Background(canvas)
 	if m.width < 40 || m.height < 14 {
 		return "\n  Readlane\n\n  Enlarge to at least 40 columns and 14 rows,\n  or use readlane read for plain output.\n\n  q quit\n"
 	}
-	header := brand.Render("▌ readlane") + quiet.Render("   Your feeds. Your pace.")
+	header := brand.Render("$ Readlane") + quiet.Render("   Your feeds. Your pace.")
 	reader := quiet.Render("Reading as ") + cleanText(m.user.Name, 100)
 	if lipgloss.Width(header)+lipgloss.Width(reader)+3 < width {
 		header += strings.Repeat(" ", width-lipgloss.Width(header)-lipgloss.Width(reader)) + reader
@@ -300,7 +367,7 @@ func (m terminalModel) View() string {
 	} else {
 		readingTab = brand.Render("Reading list")
 	}
-	nav := readingTab + "    " + sourceTab + quiet.Render("    tab to switch")
+	nav := readingTab + "    " + sourceTab + quiet.Render("    tab switch   ? controls")
 	noun := "posts"
 	if m.total == 1 {
 		noun = "post"
@@ -319,13 +386,32 @@ func (m terminalModel) View() string {
 		}
 	}
 	if m.loading {
-		caption = "Gathering your reading list…"
+		lane := "▪ ▪ ▪ ▪ ▪"
+		if !m.reducedMotion {
+			cells := []string{"·", "·", "·", "·", "·"}
+			cells[m.frame%len(cells)] = "◆"
+			lane = strings.Join(cells, " ")
+		}
+		caption = lane + "  Gathering your reading list…"
 	}
 	if m.err != nil {
 		caption = "Could not refresh. Press r to try again."
 	}
 	var body strings.Builder
-	if m.mode == "detail" {
+	if m.help {
+		body.WriteString(brand.Render("Find your way") + "\n\n" +
+			"↑ ↓ / j k     Move through stories or sources\n" +
+			"← → / p n     Previous / next list page\n" +
+			"Enter         Read a story or filter a source\n" +
+			"Tab           Switch reading list / sources\n" +
+			"Home / End    First / last item on this page\n" +
+			"/             Search    Ctrl+U clears\n" +
+			"Esc / ←       Return from a story\n" +
+			"r             Refresh    a shows all sources\n" +
+			"m             Toggle loading animation\n" +
+			"? / Esc       Close controls    q quits")
+	} else if m.mode == "detail" {
+		caption = fmt.Sprintf("Feed summary    %d%% read", int(m.detail.ScrollPercent()*100))
 		body.WriteString(m.detail.View())
 	} else if m.mode == "sources" {
 		available := max(1, height/2)
@@ -340,7 +426,7 @@ func (m terminalModel) View() string {
 			prefix := "  "
 			if i == m.sourceSelected {
 				prefix = "› "
-				line = lipgloss.NewStyle().Bold(true).Foreground(accent).Render(line)
+				line = lipgloss.NewStyle().Bold(true).Foreground(accent).Background(tint).Width(width - 2).Render(line)
 			}
 			body.WriteString(prefix + line + "\n\n")
 		}
@@ -374,23 +460,30 @@ func (m terminalModel) View() string {
 			if p.PublishedAt.Valid {
 				date = p.PublishedAt.Time.UTC().Format("02 Jan 2006")
 			}
-			title := ansi.Truncate(cleanText(p.Title, 300), width-5, "…")
-			meta := ansi.Truncate(cleanText(p.FeedName, 200)+"  ·  "+date, width-5, "…")
+			title := ansi.Truncate(strings.Join(strings.Fields(cleanText(p.Title, 300)), " "), width-6, "…")
+			meta := ansi.Truncate(strings.Join(strings.Fields(cleanText(p.FeedName, 200)), " ")+"  ·  "+date, width-6, "…")
 			prefix := "  "
-			lineStyle := lipgloss.NewStyle().Width(width).Padding(0, 1)
+			lineStyle := lipgloss.NewStyle().Width(width-2).Padding(0, 1).Foreground(ink).Background(canvas)
 			if i == m.selected {
 				prefix = "› "
 				lineStyle = lineStyle.Background(tint)
-				title = brand.Render(title)
+				title = brand.Bold(true).Render(title)
 			}
 			block := prefix + title + "\n  " + quiet.Render(meta)
 			if linesPerPost == 4 {
-				block += "\n  " + quiet.Render(ansi.Truncate(summary(p.Description), width-5, "…"))
+				block += "\n  " + quiet.Render(ansi.Truncate(summary(p.Description), width-6, "…"))
 			}
 			body.WriteString(lineStyle.Render(block) + "\n\n")
 		}
 	}
-	search := quiet.Render("/ search")
+	if m.help {
+		lines := strings.Split(body.String(), "\n")
+		offset := min(m.helpOffset, max(0, len(lines)-height))
+		text := strings.Join(lines[offset:min(len(lines), offset+height)], "\n")
+		body.Reset()
+		body.WriteString(text)
+	}
+	search := quiet.Render("/ search   ctrl+u clear   ? controls")
 	if m.searching {
 		input := m.input
 		input.Width = max(8, width-4)
@@ -407,7 +500,7 @@ func (m terminalModel) View() string {
 		footer = "Type to search   ctrl+u clear   enter apply   esc close"
 	}
 	if width < 100 {
-		footer = "↑↓ move  enter read  / search  tab sources  n/p pages  q quit"
+		footer = "↑↓ move  enter read  / search  tab sources  ←→ pages  q quit"
 		if width < 60 {
 			footer = "↑↓ move  enter read  / find  q quit"
 		}
@@ -429,5 +522,8 @@ func (m terminalModel) View() string {
 	if width < 100 {
 		footerText = footer
 	}
-	return lipgloss.NewStyle().Padding(1, 2).Render(ansi.Truncate(header, width, "…") + "\n\n" + ansi.Truncate(nav, width, "…") + "\n" + quiet.Render(ansi.Truncate(caption, width, "…")) + "\n\n" + bodyStyle.Render(body.String()) + "\n" + search + "\n" + quiet.Render(ansi.Truncate(footerText, width, "…")))
+	if m.help {
+		footerText = "↑↓ scroll controls   esc close   q quit"
+	}
+	return lipgloss.NewStyle().Width(m.width).Height(m.height).MaxHeight(m.height).Foreground(ink).Background(canvas).Padding(1, 2).Render(ansi.Truncate(header, width, "…") + "\n\n" + ansi.Truncate(nav, width, "…") + "\n" + quiet.Render(ansi.Truncate(caption, width, "…")) + "\n\n" + bodyStyle.Render(body.String()) + "\n" + search + "\n" + quiet.Render(ansi.Truncate(footerText, width, "…")))
 }

@@ -121,13 +121,19 @@ The installed binary contains the migrations for its revision. Migrations never 
 
 ## Local PostgreSQL lifecycle
 
+Opening `readlane` or `readlane tui` automatically initializes or restarts the
+private local cluster, applies embedded migrations, and prepares a local reader.
+This does not install or enable a PostgreSQL service. Closing the reader leaves
+PostgreSQL running for other commands and collectors. Custom database servers
+remain operator-managed. The optional helper remains available for manual setup.
+
 The helper does not install or enable a PostgreSQL service. If it reused a
 legacy cluster, substitute the printed `blog-aggregator` data-directory path
 for `readlane` in the commands below. Its dedicated local cluster can be inspected and stopped with:
 
 ```sh
-pg_ctl -D "$HOME/.local/share/blog-aggrereadlane/postgres" status
-pg_ctl -D "$HOME/.local/share/blog-aggrereadlane/postgres" stop -m fast
+pg_ctl -D "$HOME/.local/share/readlane/postgres" status
+pg_ctl -D "$HOME/.local/share/readlane/postgres" stop -m fast
 ```
 
 Run `./scripts/start-local-postgres.sh` to start it again. Keep the data directory; removing it removes the database. PostgreSQL major upgrades require a planned `pg_upgrade` or dump/restore; do not point a new major version's server binary at an older data directory.

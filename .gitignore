@@ -7,3 +7,5 @@
 /.readlane.json
 
 /node_modules/
+
+/.readlane-build.*

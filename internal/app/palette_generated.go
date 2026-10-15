@@ -14,6 +14,7 @@ const (
 	brandSuccess              = "#25664E"
 	brandScrollbar            = "#ABB0C6"
 	brandScrollbarHover       = "#727A98"
+	brandTerminalBackground   = "#0C0F18"
 	brandTerminalInkDark      = "#F0EFFA"
 	brandTerminalMutedDark    = "#B3B1C8"
 	brandTerminalPrimaryDark  = "#AEA5FF"

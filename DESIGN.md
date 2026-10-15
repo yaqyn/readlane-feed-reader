@@ -16,6 +16,7 @@
     "success": "#25664E",
     "scrollbar": "#ABB0C6",
     "scrollbar-hover": "#727A98",
+    "terminal-background": "#0C0F18",
     "terminal-ink-dark": "#F0EFFA",
     "terminal-muted-dark": "#B3B1C8",
     "terminal-primary-dark": "#AEA5FF",
@@ -93,8 +94,8 @@ Porcelain is the page background; white holds the reading surface. Ink carries
 headings and prose, muted slate carries supporting information, and violet
 marks navigation and actions. Tint indicates selection. Danger and success
 always have accompanying text. Focus uses a violet outline with an offset.
-The web product uses one light theme; the terminal adapts to light/dark host
-backgrounds and supports NO_COLOR. forced-colors settings retain native contrast.
+The web product uses one light theme; the terminal owns a cover-inspired midnight canvas with lavender accents
+and supports NO_COLOR. forced-colors settings retain native contrast.
 
 ## Typography
 Manrope is self-hosted for navigation, controls, and the wordmark. Source Serif
@@ -152,7 +153,9 @@ The runtime mark is repository-owned SVG. Icons supplement text; actionable
 icons have accessible names. Decorative SVGs have empty alternative text.
 
 ### Motion
-Only control feedback transitions run, lasting 140ms. Reduced motion removes
+The terminal animates a small violet lane only while loading; `m` toggles motion,
+and READLANE_REDUCED_MOTION=1 starts with motion disabled. Idle screens do not tick.
+Web control feedback transitions run, lasting 140ms. Reduced motion removes
 transitions and animation. Loading uses a text status and reserved region,
 not an ornamental page entrance or repeated reveal sequence.
 

@@ -80,6 +80,10 @@ func (c *Config) SetUser(name string) error {
 	*c = next
 	return nil
 }
+
+// Save persists a private configuration using an atomic rename.
+func Save(cfg Config) error { return write(cfg) }
+
 func write(cfg Config) error {
 	p, err := getConfigFilePath()
 	if err != nil {

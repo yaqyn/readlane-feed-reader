@@ -1,7 +1,17 @@
 # Readlane in the terminal
 
 The terminal is Readlane's primary interface. Use the interactive reader for
-browsing; use commands for setup, source management, collection, and scripts.
+browsing; use commands for source management, collection, and scripts.
+
+## One-command launch
+
+From the checkout, run `./launch` to build, set up the private local database,
+open the reader, and collect one due feed every minute. An installed binary
+supports `readlane launch`. Collection runs in the same process and stops when
+you quit. Its private log is `$XDG_CACHE_HOME/readlane/collector.log`, defaulting
+to `~/.cache/readlane/collector.log`. Press r to reload new stories. If a separate
+collector already holds the worker lock, that worker continues to collect.
+Use `./launch addfeed <name> <url>` to build and run an individual command.
 
 ## Open your reading list
 
@@ -9,9 +19,24 @@ browsing; use commands for setup, source management, collection, and scripts.
 output it prints help. `readlane tui` explicitly requests the interactive view
 and reports a useful error when no terminal is attached.
 
+For the private local database, opening the reader also handles setup and
+recovery: it creates the cluster if needed, starts it when stopped, applies
+embedded migrations, and selects the sole existing reader or creates one using
+your OS username. If multiple readers exist without a selection, use
+`readlane users` and `readlane login <name>` to choose. Existing selected readers
+are preserved. PostgreSQL's `initdb` and `pg_ctl` tools must be available.
+The generated config is private (mode 600). Custom database connections keep
+explicit startup, migrations, and reader selection. Plain CLI commands never
+automatically start a database; open `readlane` first after a reboot.
+
 The top bar identifies the selected local reader. The Reading list view shows
 collected stories, their source, and publication date. The selected story has a
-pointer and, when color is enabled, a violet highlight. Color is supplemental;
+pointer and, when color is enabled, a violet highlight. Color is supplemental.
+The full-screen reader uses the cover’s midnight background, lavender accents,
+and violet selection lane. Press `?` for scrollable controls, `Home`/`End` to
+jump within a page, and `m` to toggle loading motion. Set
+`READLANE_REDUCED_MOTION=1` to disable motion at startup.
+
 `NO_COLOR` leaves the layout and selection marker usable.
 
 Use ↑/↓ or j/k to move. Enter opens a scrollable feed summary, with the original
@@ -26,7 +51,7 @@ letters remain text rather than navigation shortcuts.
 Tab opens the Sources view. Choose a source with ↑/↓ and Enter. The current
 search stays active. a returns to all followed sources. List pages contain 20
 stories; n/p or arrow/page keys move between pages. r refreshes after a collector
-has stored new posts. The reader is intentionally not an automatic collector.
+has stored new posts. `readlane tui` is intentionally not an automatic collector; use `readlane launch` to include collection.
 
 ## Command reference
 

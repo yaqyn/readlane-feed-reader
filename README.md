@@ -10,7 +10,7 @@ Readlane brings RSS and Atom feeds into a PostgreSQL-backed reading list. Browse
 
 ## <img src="readme-assets/icons/features.svg" width="24" height="24" alt=""> Features
 
-- **Read with the keyboard.** Move through stories, search, filter by source, and open a scrollable summary without leaving the terminal. Light/dark colors follow the terminal; `NO_COLOR` is respected.
+- **Read with the keyboard.** Move through stories, search, filter by source, and open a scrollable summary without leaving the terminal. A midnight canvas and lavender selection echo the cover; `NO_COLOR` is respected.
 - **Commands that compose.** Manage sources, follow feeds, inspect collection, and print posts without entering the interactive view. Redirected output stays free of color escapes.
 - **Collection that keeps its place.** A single worker per database, timeouts, bounded responses, persistent retry backoff, and HTTP cache validators keep repeated runs predictable.
 - **Your sources, kept locally.** PostgreSQL stores posts and subscriptions; URL uniqueness prevents duplicate articles. Embedded migrations travel with the binary.
@@ -20,54 +20,63 @@ Readlane is for a **trusted local environment**. Reader selection is not authent
 
 ## <img src="readme-assets/icons/installation.svg" width="24" height="24" alt=""> Installation
 
-You need **Go 1.27.2+**, PostgreSQL 15+, and a terminal. The optional local database helper also needs Python 3 and the PostgreSQL server tools (`initdb`, `pg_ctl`, `psql`, and `createdb`) in `PATH`.
+You need **Go 1.27.2+**, PostgreSQL 15+, and a terminal. Automatic local setup needs PostgreSQL server tools (`initdb` and `pg_ctl`) in `PATH`.
 
-Clone the repository and install the terminal reader:
+Clone and launch everything:
 
 ```sh
 git clone https://github.com/yaqyn/readlane-feed-reader.git
 cd readlane-feed-reader
-go install ./cmd/readlane
+./launch
 ```
 
-Add `$(go env GOBIN)` to `PATH`, or `$(go env GOPATH)/bin` when `GOBIN` is unset. Alternatively, install a version-stamped build in `~/.local/bin`:
+`./launch` builds the current checkout, prepares the local database, opens the
+terminal reader, and collects a due feed every minute. Quit with **q**; the
+collector stops with the reader. PostgreSQL stays available for later commands.
+Collector logs go to `~/.cache/readlane/collector.log` (or your XDG cache directory).
+Press **r** to show newly collected posts.
+
+To install the command for use from any directory:
 
 ```sh
 make install
+readlane launch
 ```
 
-The installed executable includes the terminal reader, web assets, and migrations. **Go, Node.js, sqlc, and Goose are not needed at runtime.** A trusted CA certificate store is needed for HTTPS feeds. Linux and macOS are the supported local environments; the supplied service unit is for Linux/systemd.
+Use `./readlane` or `readlane tui` for the reader alone. The executable embeds
+its terminal reader, web assets, and migrations. Go is needed to build; the
+installed executable needs no Go, Node.js, sqlc, or Goose at runtime. A trusted
+CA certificate store is needed for HTTPS feeds. Linux and macOS are supported;
+the optional service unit is for Linux/systemd.
 
-### Connect your database
+### Automatic local setup
 
-For an existing server, create a dedicated database and role, copy `config.example.json` to `~/.readlane.json`, and edit `db_url`.
+On first launch, Readlane prepares a private local PostgreSQL cluster, applies
+its embedded migrations, creates a local reader, and saves a private config.
+Later launches restart that cluster when needed and open your reading list.
+Existing configuration, selected readers, and course-era data are preserved.
+No helper script, JSON copying, or separate migration command is needed for
+this local path. PostgreSQL tools must be installed; startup tells you if one
+is missing. Run as your normal OS user.
 
-To start a private local PostgreSQL cluster instead:
-
-```sh
-./scripts/start-local-postgres.sh
-```
-
-The helper prints configuration JSON. Copy **only that JSON** into `~/.readlane.json`. It creates a database over an OS-user-authenticated Unix socket and opens no TCP listener. It never overwrites your config. Existing course-era data is reused when detected; see [migration](docs/migration.md).
-
-```sh
-chmod 600 ~/.readlane.json
-readlane migrate
-readlane doctor
-```
-
-`doctor` should report `Database reachable; schema up to date`. Use certificate-verified TLS (`sslmode=verify-full`) for a remote PostgreSQL server. Local sockets and isolated test databases may use `sslmode=disable`.
+For an existing custom server, copy `config.example.json` to `~/.readlane.json`,
+edit `db_url`, run `chmod 600 ~/.readlane.json`, then `readlane migrate` and
+`readlane register alice`. Custom servers retain explicit setup and migration
+control. Use certificate-verified TLS (`sslmode=verify-full`) for remote PostgreSQL.
 
 ## <img src="readme-assets/icons/launch.svg" width="24" height="24" alt=""> Quick start
 
+Run `./launch` once to finish automatic local setup. Quit with **q**, add a
+publication, then launch again:
+
 ```sh
-readlane register alice
-readlane addfeed "Lane's Blog" https://www.wagslane.dev/index.xml
-readlane collect 1m --once
-readlane
+./readlane addfeed "Lane's Blog" https://www.wagslane.dev/index.xml
+./launch
 ```
 
-In a terminal, `readlane` opens the interactive reader. Select a story with **↑/↓**, open its summary with **Enter**, and return with **Esc**. Press **/** to search, **Tab** for sources, and **q** to quit.
+In a terminal, `readlane` opens the interactive reader. Select a story with
+**↑/↓**, open its summary with **Enter**, and return with **Esc**. Press **/**
+to search, **Tab** for sources, **?** for controls, and **q** to quit.
 
 For continuous collection, run this in another terminal:
 
@@ -75,7 +84,7 @@ For continuous collection, run this in another terminal:
 readlane collect 1m
 ```
 
-Stop the collector with **Ctrl+C**. The interactive reader does not start a collector automatically. Press **r** to refresh after new posts arrive. `--once` attempts one **due** feed and exits; an existing feed may still be waiting for its next scheduled visit.
+Stop the collector with **Ctrl+C**. `./launch` / `readlane launch` includes collection; `readlane tui` opens only the reader. Press **r** to refresh after new posts arrive. `--once` attempts one **due** feed and exits; an existing feed may still be waiting for its next scheduled visit.
 
 Prefer plain output?
 
@@ -99,7 +108,12 @@ readlane read 5
 | ↑/↓, Page Down/Page Up in a summary | Scroll the summary |
 | a | Return to all followed sources |
 | r | Refresh the current list |
+| Home/End or g/G | First/last item on the current page |
+| ? | Open scrollable keyboard controls |
+| m | Toggle loading animation |
 | q or Ctrl+C | Close the reader |
+
+Set `READLANE_REDUCED_MOTION=1` to start without loading animation. Idle screens stay still.
 
 The reader adapts down to 40 columns and 14 rows. Smaller terminals receive guidance to enlarge the window or use plain output. Search typing takes priority over shortcuts, so typing `q` in the search field does not quit. Stories are shown in pages of 20; the source chooser shows up to 200 sources, while `readlane sources` lists the complete registry.
 
