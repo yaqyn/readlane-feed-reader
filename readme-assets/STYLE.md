@@ -1,8 +1,22 @@
-# Gator asset palette
+# Readlane artwork and palette
 
-Cover background: `#101b18`. Foreground: `#f2f4ef`. Primary accent: `#8ed1ad`.
-Connector accent: `#46705d`. Muted text: `#a0aaa4`. Icon backing: `#102923`.
+`DESIGN.md` owns the palette. `scripts/design-tokens.py` generates terminal
+constants, web CSS tokens, and the palette of the canonical README SVG icons.
 
-The repository-owned vector cover shows feeds converging into stored posts.
-Heading icons use the workspace's canonical 24-unit geometry, 1.6-unit rounded
-strokes, and a dark backing for contrast on light and dark GitHub themes.
+- Primary violet: `#6253D9`; hover: `#5042BD`.
+- Porcelain background: `#F5F6FB`; reading surface: `#FFFFFF`.
+- Ink: `#20253B`; supporting text: `#626B80`; selection: `#EAE7FA`.
+- Terminal dark variants retain readable violet, ink, and supporting text.
+
+The 2172×724 README cover depicts a violet reading lane and paper summaries,
+with the exact name **Readlane** and tagline **Your feeds. Your pace.**
+It was generated using the built-in image tool. See the [brand guide](../docs/brand.md)
+for its prompt and production record. The WebP is lossless; no resize or crop
+was applied. Its only descriptive metadata is:
+
+- `XMP-dc:Creator`: `Abdulrahman M. Yaqyn`
+- `XMP-dc:Rights`: `Copyright Abdulrahman M. Yaqyn`
+
+Fonts are self-hosted in `internal/web/assets/fonts`; their original OFL license
+notices remain alongside the files. SVG icon geometry remains the workspace's
+canonical 24-unit family, with 1.6-unit rounded strokes and palette recoloring.

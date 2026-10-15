@@ -1,5 +1,39 @@
 # Verification record
 
+## Readlane rebrand and interface work (2026-10-15)
+
+Readlane is terminal-first. The rebrand preserves existing configuration and
+database records while introducing a keyboard-driven terminal reader, revised
+command output, credited artwork, and a read-only web companion.
+
+- The terminal was exercised in a real 80-column PTY: list navigation, opening
+  and returning from a summary, live search, source navigation, and clean exit.
+  Layout tests cover 40, 80, and 120 columns plus the small-window fallback.
+- Go race-enabled unit and PostgreSQL integration tests cover reader scoping,
+  full-text search, page clamping, input validation, cross-site rejection,
+  read-only HTTP methods, static assets, and database failure responses.
+- The built Readlane executable passed fresh-database deployment, repeated
+  migrations, collection, reading, backup/restore, restricted worker grants,
+  and guarded reset checks. Disposable fixtures were removed afterward.
+- Seven companion DOM tests cover rendered data, semantic accessibility, safe
+  text, search and stale responses, empty states, retry, navigation, and IME.
+  These do not replace an actual browser layout check.
+- The strict premium UI audit has no findings. Document token generation and
+  contrast checks pass; primary text/action combinations meet 4.5:1.
+- Chromium was launched and reconnected through its browser inventory. The
+  controller blocked both localhost URL forms with ERR_BLOCKED_BY_CLIENT.
+  Live browser screenshots, native select popup geometry, and viewport-based
+  visual verification remain unverified; browser security was not weakened.
+- The generated 2172×724 cover was converted with ImageMagick to lossless WebP.
+  Pixel comparison reports zero differences. ExifTool removed descriptive
+  metadata and retained only the owner creator and copyright fields.
+
+The checks below record the earlier course-completion snapshot. Its original
+command names remain recognizable as historical evidence; the current entry
+points and migration behavior are documented in README.md and migration.md.
+
+## Course-completion snapshot (2026-10-14)
+
 Local verification date: 2026-10-14. This record describes the checkout and development host checks, not a remotely deployed service.
 
 ## Course work
