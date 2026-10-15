@@ -61,6 +61,7 @@ func registeredCommands() commands {
 	c.register("read", middlewareLoggedIn(handlerBrowse))
 	c.register("migrate", handlerMigrate)
 	c.register("doctor", handlerDoctor)
+	c.register("serve", handlerServe)
 	c.register("tui", middlewareLoggedIn(handlerTerminal))
 	return c
 }
@@ -90,6 +91,7 @@ Start here
   addfeed <name> <url>            Add a source and follow it
   collect <interval> [--once]     Collect due posts (try: 1m)
   read [limit] [offset]           Read your posts (default: 5)
+  serve [--addr address]          Open the local web reader
 
 Your sources
   sources                         List sources and retry status
@@ -135,7 +137,7 @@ func runCLI(ctx context.Context, args []string) error {
 		return fmt.Errorf("unknown command %q; use readlane help", cleanText(args[0], 100))
 	}
 	cmd := command{name: args[0], args: args[1:]}
-	if cmd.name != "agg" && cmd.name != "collect" && cmd.name != "tui" {
+	if cmd.name != "agg" && cmd.name != "collect" && cmd.name != "serve" && cmd.name != "tui" {
 		timeout := 15 * time.Second
 		if cmd.name == "fetch" || cmd.name == "preview" {
 			timeout = 35 * time.Second
