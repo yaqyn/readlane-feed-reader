@@ -6,7 +6,7 @@ import (
 	"database/sql"
 	"github.com/pressly/goose/v3"
 	"github.com/pressly/goose/v3/lock"
-	sqlschema "github.com/yaqyn/readlane/sql"
+	sqlschema "github.com/yaqyn/readlane-feed-reader/sql"
 	"io/fs"
 	"log/slog"
 )

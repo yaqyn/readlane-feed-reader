@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/yaqyn/readlane/internal/database"
+	"github.com/yaqyn/readlane-feed-reader/internal/database"
 )
 
 func readerRequest(handler http.Handler, target string) *httptest.ResponseRecorder {

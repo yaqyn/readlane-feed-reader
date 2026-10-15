@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/yaqyn/readlane/internal/database"
+	"github.com/yaqyn/readlane-feed-reader/internal/database"
 	"log/slog"
 	"time"
 )

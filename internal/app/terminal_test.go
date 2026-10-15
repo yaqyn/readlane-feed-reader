@@ -4,7 +4,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/x/ansi"
 	"github.com/google/uuid"
-	"github.com/yaqyn/readlane/internal/database"
+	"github.com/yaqyn/readlane-feed-reader/internal/database"
 	"strings"
 	"testing"
 )

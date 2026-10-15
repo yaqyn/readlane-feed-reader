@@ -1,4 +1,4 @@
-module github.com/yaqyn/readlane
+module github.com/yaqyn/readlane-feed-reader
 
 go 1.27.2
 

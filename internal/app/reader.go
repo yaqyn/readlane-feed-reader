@@ -18,8 +18,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/yaqyn/readlane/internal/database"
-	"github.com/yaqyn/readlane/internal/web"
+	"github.com/yaqyn/readlane-feed-reader/internal/database"
+	"github.com/yaqyn/readlane-feed-reader/internal/web"
 )
 
 const readerPageSize = 12

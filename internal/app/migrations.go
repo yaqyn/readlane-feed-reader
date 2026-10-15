@@ -2,7 +2,7 @@ package app
 
 import (
 	"fmt"
-	"github.com/yaqyn/readlane/internal/migrations"
+	"github.com/yaqyn/readlane-feed-reader/internal/migrations"
 )
 
 func handlerMigrate(s *state, cmd command) error {

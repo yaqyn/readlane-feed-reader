@@ -2,15 +2,15 @@
 
 # Readlane — a terminal-first feed reader
 
-Collect the publications you follow and make time for the stories that matter to you, straight from your terminal.
+Follow RSS and Atom publications, collect their posts locally, and read them from your terminal.
 
-Readlane brings RSS and Atom feeds into a PostgreSQL-backed reading list. Browse with the keyboard, search collected posts, or use small commands in your own workflow. A quiet web reader is included for the moments you want more room on the page.
+Readlane brings RSS and Atom feeds into a PostgreSQL-backed reading list. Browse with the keyboard, search collected posts, or use small commands in your own workflow. An optional, read-only web companion displays the same collected stories.
 
 [Start reading](#-installation) · [Terminal guide](docs/terminal.md) · [Operations](docs/operations.md)
 
 ## <img src="readme-assets/icons/features.svg" width="24" height="24" alt=""> Features
 
-- **A proper terminal reader.** Move through stories, search, filter by source, and open a scrollable summary without leaving the terminal. Light/dark colors follow the terminal; `NO_COLOR` is respected.
+- **Read with the keyboard.** Move through stories, search, filter by source, and open a scrollable summary without leaving the terminal. Light/dark colors follow the terminal; `NO_COLOR` is respected.
 - **Commands that compose.** Manage sources, follow feeds, inspect collection, and print posts without entering the interactive view. Redirected output stays free of color escapes.
 - **Collection that keeps its place.** A single worker per database, timeouts, bounded responses, persistent retry backoff, and HTTP cache validators keep repeated runs predictable.
 - **Your sources, kept locally.** PostgreSQL stores posts and subscriptions; URL uniqueness prevents duplicate articles. Embedded migrations travel with the binary.
@@ -22,9 +22,11 @@ Readlane is for a **trusted local environment**. Reader selection is not authent
 
 You need **Go 1.27.2+**, PostgreSQL 15+, and a terminal. The optional local database helper also needs Python 3 and the PostgreSQL server tools (`initdb`, `pg_ctl`, `psql`, and `createdb`) in `PATH`.
 
-From this checkout:
+Clone the repository and install the terminal reader:
 
 ```sh
+git clone https://github.com/yaqyn/readlane-feed-reader.git
+cd readlane-feed-reader
 go install ./cmd/readlane
 ```
 
@@ -175,7 +177,7 @@ npm ci --ignore-scripts
 make web-check
 ```
 
-[Verification notes](docs/verification.md) distinguish local tests, actual terminal checks, companion DOM/API checks, and unverified browser rendering. GitHub CI is configured but has not run remotely because this checkout has no published remote.
+[Verification notes](docs/verification.md) distinguish local tests, actual terminal checks, companion DOM/API checks, and unverified browser rendering. [GitHub CI](https://github.com/yaqyn/readlane-feed-reader/actions/workflows/ci.yml) runs the verification pipeline and database-backed smoke checks.
 
 ## <img src="readme-assets/icons/security.svg" width="24" height="24" alt=""> Security and limitations
 

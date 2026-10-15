@@ -16,9 +16,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
-	"github.com/yaqyn/readlane/internal/config"
-	"github.com/yaqyn/readlane/internal/database"
-	"github.com/yaqyn/readlane/internal/migrations"
+	"github.com/yaqyn/readlane-feed-reader/internal/config"
+	"github.com/yaqyn/readlane-feed-reader/internal/database"
+	"github.com/yaqyn/readlane-feed-reader/internal/migrations"
 )
 
 // Every integration test gets a separate schema in an explicitly named test DB.

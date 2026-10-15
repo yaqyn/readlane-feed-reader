@@ -15,7 +15,7 @@ import (
 	"github.com/charmbracelet/x/ansi"
 	"github.com/google/uuid"
 	"github.com/muesli/termenv"
-	"github.com/yaqyn/readlane/internal/database"
+	"github.com/yaqyn/readlane-feed-reader/internal/database"
 )
 
 const terminalPageSize = 20

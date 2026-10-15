@@ -1,6 +1,6 @@
 # Moving from Gator to Readlane
 
-The product and Go module are now **Readlane** (`github.com/yaqyn/readlane`).
+The product and Go module are now **Readlane** (`github.com/yaqyn/readlane-feed-reader`).
 The executable is `readlane`, its command package is `cmd/readlane`, and the
 collector service is `deploy/readlane.service`. This checkout directory remains
 `blog-aggregator`; no remote repository has been created or renamed.

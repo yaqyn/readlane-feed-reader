@@ -3,7 +3,7 @@ package app
 import (
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/yaqyn/readlane/internal/database"
+	"github.com/yaqyn/readlane-feed-reader/internal/database"
 	"time"
 )
 

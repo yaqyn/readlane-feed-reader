@@ -1,5 +1,5 @@
 VERSION ?= $(shell git describe --always --dirty 2>/dev/null || echo dev)
-APP_PACKAGE := github.com/yaqyn/readlane/internal/app
+APP_PACKAGE := github.com/yaqyn/readlane-feed-reader/internal/app
 
 .PHONY: build install test integration vet generate check-generated audit verify smoke web-check design-check
 build:

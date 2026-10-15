@@ -2,7 +2,7 @@ package app
 
 import (
 	"fmt"
-	"github.com/yaqyn/readlane/internal/database"
+	"github.com/yaqyn/readlane-feed-reader/internal/database"
 )
 
 func middlewareLoggedIn(handler func(*state, command, database.User) error) func(*state, command) error {

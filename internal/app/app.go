@@ -13,8 +13,8 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/yaqyn/readlane/internal/config"
-	"github.com/yaqyn/readlane/internal/database"
+	"github.com/yaqyn/readlane-feed-reader/internal/config"
+	"github.com/yaqyn/readlane-feed-reader/internal/database"
 )
 
 var Version = "dev"
