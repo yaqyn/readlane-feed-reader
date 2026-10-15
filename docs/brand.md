@@ -14,8 +14,9 @@ and palette. Marketing should show those working behaviors and avoid claims
 about unread tracking, full-article extraction, hosted accounts, or readership
 numbers that the application does not support.
 
-The cover's expressive element is a violet ribbon carrying paper summaries.
-Everything around it stays restrained. Product text uses concrete labels:
+The cover foregrounds a dark terminal reading list, a violet selection, a
+command prompt, and keyboard hints. It is illustrative artwork, not a product
+screenshot; story and publication pairings are fictional examples. Product text uses concrete labels:
 Reading list, Sources, Search, Feed summary, and Read original.
 
 `DESIGN.md` is the durable visual contract and token source. The default web
@@ -27,7 +28,7 @@ fonts; terminals use their user's own typeface. OFL license files are bundled.
 
 The built-in image generation tool produced the cover. The final prompt was:
 
-> Use case: ads-marketing. Asset type: final landscape README cover for a professional local RSS and Atom reader named Readlane. Create a polished high-end brand image at wide landscape approximately 3:1, with the exact app name "Readlane" prominently and perfectly spelled R-e-a-d-l-a-n-e in large elegant modern humanist sans-serif lettering, left aligned with generous breathing room, and exact smaller tagline "Your feeds. Your pace." underneath. Theme: a quiet personal reading lane. Cool porcelain-white backdrop #F5F6FB with deep navy ink #20253B typography. On the right, an original sculptural illustration of several thin layered reading sheets flowing along a softly curved, broad iris-violet ribbon #6253D9, with two subtle pale lilac bookmark tabs; tactile matte paper, subtle material shadows, precise composition, editorial product art rather than a software UI screenshot. Use cool lilac #EAE7FA and slate #667085 supporting colors. Keep text on plain negative space, avoid placing imagery behind the letters. Professional, calm, recognizable, purposeful. Restrained violet color, no gradients as decoration, no neon, no stock-photo people, no mascots, no terminal screenshots, no invented product features, no extra words, no small fake text, no watermark. The name must remain easily readable at GitHub README widths. Opaque background.
+> Use case: ads-marketing. Asset type: replacement README cover for Readlane, a terminal-first RSS and Atom reader. Input image is the edit target and brand reference. Redesign it to strongly communicate a polished terminal product; remove the paper sheets and ribbon illustration completely. Keep the exact brand name "Readlane" and tagline "Your feeds. Your pace.", violet identity, and wide approximately 3:1 landscape composition. Make the entire canvas a deep midnight terminal background #171824, with restrained violet #AEA5FF accents and off-white #F0EFFA lettering. Left third: large perfectly spelled Readlane wordmark, smaller exact tagline, then a small monospace command "$ readlane" with a block cursor. Right two thirds: a crisp, flat, front-facing terminal reading list, editorially composed, generous spacing, fine box-drawing divider lines, no browser chrome, no laptop/device, no perspective. Terminal header "Readlane", navigation "Reading list   Sources", caption "All sources". Three short representative story titles: "A quieter way to keep up", "Small tools, lasting habits", "Notes from the open web". First row selected with a muted violet rectangular highlight and a simple > indicator. Footer in monospace: "j/k move   enter read   / search   q quit". Accurate readable typography, sparse terminal interface, aligned monospaced columns. This is illustrative cover artwork, not a claimed screenshot; keep it plausible and faithful to supported reading-list behavior. Premium developer-tool aesthetic, restrained, calm, strong typographic hierarchy; no neon, no green hacker code, no gradients, no glow, no paper illustration, no browser interface, no extra invented features or logos, no watermark. Opaque background.
 
 The selected PNG was inspected for spelling and composition, then converted
 without resizing or cropping:

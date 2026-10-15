@@ -8,7 +8,8 @@ constants, web CSS tokens, and the palette of the canonical README SVG icons.
 - Ink: `#20253B`; supporting text: `#626B80`; selection: `#EAE7FA`.
 - Terminal dark variants retain readable violet, ink, and supporting text.
 
-The 2172×724 README cover depicts a violet reading lane and paper summaries,
+The 2172×724 README cover depicts a dark terminal reading list with violet
+selection, a command prompt, and keyboard hints,
 with the exact name **Readlane** and tagline **Your feeds. Your pace.**
 It was generated using the built-in image tool. See the [brand guide](../docs/brand.md)
 for its prompt and production record. The WebP is lossless; no resize or crop

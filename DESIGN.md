@@ -61,9 +61,10 @@
 ## Overview
 
 ### Creative North Star
-A broad violet bookmark laid between the pages of a personal reading stack.
-The memorable move is the large, assured wordmark and flowing reading lane on
-the cover. Product screens stay quiet so the stories carry the attention.
+A quiet reading lane inside the terminal: aligned monospace text, a violet
+selection, and visible keyboard controls. The cover pairs that reading list
+with a large wordmark and command prompt. Product screens stay quiet so the
+stories carry the attention.
 
 ### Product context and register
 Readers choose publications, collect them locally, and return when ready.
