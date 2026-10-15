@@ -7,7 +7,7 @@ register users, change subscriptions, reset data, or fetch remote feed URLs.
 A selected local user is fixed for the server lifetime and is not a login.
 
 ## Canonical UI map
-| Capability | Canonical owner | Source of truth | Variants | Verification |
+| Capability | Canonical owner | Source of truth | Allowed variants | Verification |
 | --- | --- | --- | --- | --- |
 | Form | reader.html search form and reader.js | This contract | search | browser and API tests |
 | Select/Listbox | Native source select | DESIGN.md | platform-owned popup | keyboard and narrow viewport |
@@ -50,3 +50,6 @@ search keystrokes or background refresh. Browser Back restores list context.
 English UI, locale-formatted dates, one light theme, reduced motion and forced
 colors supported. No mutations, destructive dialogs, authentication, billing,
 local storage of post data, unread states, or fabricated reading-time badges.
+
+Buttons are disabled in the static HTML until reader.js binds their actions.
+This keeps the no-JavaScript and failed-script paths free of false affordances.

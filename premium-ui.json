@@ -1,0 +1,19 @@
+{
+  "profile": "product-admin",
+  "sourceRoots": ["internal/web/assets"],
+  "locale": "en",
+  "canonicalMap": "UX-CONTRACT.md",
+  "requiredCapabilities": ["Form", "Select/Listbox", "Scrollbar"],
+  "ownership": {
+    "Select/Listbox": "native"
+  },
+  "requiredCommands": ["unit", "dom", "tokens"],
+  "commands": {
+    "unit": "go test ./...",
+    "dom": "npm run test:web",
+    "tokens": "python3 scripts/design-tokens.py --check"
+  },
+  "evidence": {
+    "failurePaths": "internal/app/reader_test.go"
+  }
+}

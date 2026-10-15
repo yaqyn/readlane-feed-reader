@@ -1,0 +1,13 @@
+{
+  "name": "readlane-ui-checks",
+  "private": true,
+  "description": "Development-only checks for Readlane's optional embedded web reader",
+  "scripts": {
+    "test:web": "node --test tests/reader.test.cjs"
+  },
+  "devDependencies": {
+    "axe-core": "4.14.0",
+    "jsdom": "30.1.2",
+    "prettier": "3.9.10"
+  }
+}

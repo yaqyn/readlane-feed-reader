@@ -1,7 +1,7 @@
 VERSION ?= $(shell git describe --always --dirty 2>/dev/null || echo dev)
 APP_PACKAGE := github.com/yaqyn/readlane/internal/app
 
-.PHONY: build install test integration vet generate check-generated audit verify smoke
+.PHONY: build install test integration vet generate check-generated audit verify smoke web-check design-check
 build:
 	CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X $(APP_PACKAGE).Version=$(VERSION)" -o readlane ./cmd/readlane
 install: build
@@ -22,4 +22,9 @@ check-generated: generate
 	@test -z "$$(git ls-files --others --exclude-standard internal/database)"
 audit:
 	govulncheck ./...
-verify: vet test check-generated audit
+web-check:
+	npm run test:web
+	npm exec -- prettier --check internal/web/assets/reader.html internal/web/assets/reader.css internal/web/assets/reader.js tests/reader.test.cjs package.json premium-ui.json
+design-check:
+	python3 scripts/design-tokens.py --check
+verify: vet test check-generated design-check audit

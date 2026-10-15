@@ -5,3 +5,5 @@
 /.env
 /coverage.out
 /.readlane.json
+
+/node_modules/
