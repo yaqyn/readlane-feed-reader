@@ -218,7 +218,7 @@ func parseFeed(b []byte, base *url.URL) (*RSSFeed, error) {
 
 func handlerFetch(s *state, cmd command) error {
 	if len(cmd.args) != 1 {
-		return fmt.Errorf("usage: readlane fetch <url>")
+		return fmt.Errorf("usage: readlane preview <url>")
 	}
 	feed, err := fetchFeed(s.ctx, cmd.args[0])
 	if err != nil {

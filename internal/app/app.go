@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -47,15 +48,20 @@ func registeredCommands() commands {
 	c.register("reset", handlerReset)
 	c.register("users", handlerUsers)
 	c.register("agg", handlerAgg)
+	c.register("collect", handlerAgg)
 	c.register("fetch", handlerFetch)
+	c.register("preview", handlerFetch)
 	c.register("addfeed", middlewareLoggedIn(handlerAddFeed))
 	c.register("feeds", handlerFeeds)
+	c.register("sources", handlerFeeds)
 	c.register("follow", middlewareLoggedIn(handlerFollow))
 	c.register("following", middlewareLoggedIn(handlerFollowing))
 	c.register("unfollow", middlewareLoggedIn(handlerUnfollow))
 	c.register("browse", middlewareLoggedIn(handlerBrowse))
+	c.register("read", middlewareLoggedIn(handlerBrowse))
 	c.register("migrate", handlerMigrate)
 	c.register("doctor", handlerDoctor)
+	c.register("tui", middlewareLoggedIn(handlerTerminal))
 	return c
 }
 func handlerLogin(s *state, cmd command) error {
@@ -72,38 +78,52 @@ func handlerLogin(s *state, cmd command) error {
 	return nil
 }
 
-const usage = `readlane — collect and browse RSS and Atom feeds
+const usage = `Readlane
+Your feeds. Your pace.
 
 Usage: readlane <command> [arguments]
 
-  migrate                         Apply embedded database migrations
-  doctor                          Check database connectivity and schema
-  register <username>             Create and select a local user
-  login <username>                Select an existing local user
-  users                           List local users
-  addfeed <name> <url>            Add a feed and follow it atomically
-  feeds                           List feeds and their creators
-  follow <url>                    Follow an existing feed
-  following                       List your followed feeds
-  unfollow <url>                  Unfollow a feed
-  fetch <url>                     Preview a feed without saving it
-  agg <interval> [--once]         Collect one feed per cycle (minimum 5s)
-  browse [limit] [offset]         Read followed posts (default limit: 2)
-  reset --confirm                 DELETE all users, feeds, follows and posts
-  version                         Print the build version
-  help                            Show this help
+Start here
+  tui                             Open the interactive terminal reader
+  migrate                         Prepare or update the database
+  register <name>                 Create and select a local reader
+  addfeed <name> <url>            Add a source and follow it
+  collect <interval> [--once]     Collect due posts (try: 1m)
+  read [limit] [offset]           Read your posts (default: 5)
 
-Config: ~/.readlane.json (override with READLANE_CONFIG)
-Database URL override: READLANE_DATABASE_URL
-Local user selection is not authentication.
+Your sources
+  sources                         List sources and retry status
+  follow <url>                    Follow a source already added
+  following                       Show the sources you follow
+  unfollow <url>                  Stop following a source
+  preview <url>                   Preview a feed without saving it
+
+Your workspace
+  login <name>                    Switch the current local reader
+  users                           List readers
+  doctor                          Check database and migrations
+  reset --confirm                 Delete all readers, sources and posts
+  version                         Show the installed version
+  help                            Show this guide
+
+Config: ~/.readlane.json (READLANE_CONFIG overrides it)
+Database: READLANE_DATABASE_URL overrides the configured connection.
+Local reader selection is not authentication.
+
+Existing command names agg, browse, feeds and fetch are also supported.
 `
 
 func runCLI(ctx context.Context, args []string) error {
 	if len(args) == 0 {
-		return fmt.Errorf("a command is required; use readlane help")
+		if terminalAvailable() {
+			args = []string{"tui"}
+		} else {
+			fmt.Print(usage)
+			return nil
+		}
 	}
 	if args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
-		fmt.Print(usage)
+		fmt.Print(cliStyle("Readlane", "1;38;5;99") + strings.TrimPrefix(usage, "Readlane"))
 		return nil
 	}
 	if args[0] == "version" || args[0] == "--version" {
@@ -115,9 +135,9 @@ func runCLI(ctx context.Context, args []string) error {
 		return fmt.Errorf("unknown command %q; use readlane help", cleanText(args[0], 100))
 	}
 	cmd := command{name: args[0], args: args[1:]}
-	if cmd.name != "agg" {
+	if cmd.name != "agg" && cmd.name != "collect" && cmd.name != "tui" {
 		timeout := 15 * time.Second
-		if cmd.name == "fetch" {
+		if cmd.name == "fetch" || cmd.name == "preview" {
 			timeout = 35 * time.Second
 		}
 		if cmd.name == "migrate" {
@@ -128,7 +148,7 @@ func runCLI(ctx context.Context, args []string) error {
 		defer cancel()
 	}
 	// Feed previews and help do not require an available database or config file.
-	if cmd.name == "fetch" {
+	if cmd.name == "fetch" || cmd.name == "preview" {
 		return c.run(&state{ctx: ctx}, cmd)
 	}
 	cfg, err := config.Read()

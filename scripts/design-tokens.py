@@ -3,6 +3,7 @@
 import json
 import pathlib
 import sys
+import subprocess
 
 root = pathlib.Path(__file__).resolve().parents[1]
 front = json.loads((root / 'DESIGN.md').read_text().split('---', 2)[1])
@@ -10,6 +11,8 @@ colors = front['colors']
 css = '/* Generated from DESIGN.md by scripts/design-tokens.py. */\n:root {\n'
 for key, value in colors.items():
     css += f'  --color-{key}: {value};\n'
+for key, value in front['typography'].items():
+    css += f'  --font-{key}: {value["fontFamily"]};\n'
 for key, value in front['rounded'].items():
     css += f'  --radius-{key.lower()}: {value};\n'
 for key, value in front['spacing'].items():
@@ -20,6 +23,7 @@ for key, value in colors.items():
     name = 'brand' + ''.join(part.title() for part in key.split('-'))
     palette += f'\t{name} = "{value}"\n'
 palette += ')\n'
+palette = subprocess.run(['gofmt'], input=palette, text=True, capture_output=True, check=True).stdout
 outputs = {root / 'internal/web/assets/tokens.css': css, root / 'internal/app/palette_generated.go': palette}
 for path in (root / 'readme-assets/icons').glob('*.svg'):
     import re

@@ -16,6 +16,9 @@
   --color-terminal-muted-dark: #B3B1C8;
   --color-terminal-primary-dark: #AEA5FF;
   --color-terminal-selected-dark: #302B4D;
+  --font-sans: Manrope, system-ui, sans-serif;
+  --font-reading: Source Serif 4, Georgia, serif;
+  --font-mono: ui-monospace, monospace;
   --radius-sm: 0.5rem;
   --radius-default: 0.75rem;
   --radius-lg: 1.25rem;

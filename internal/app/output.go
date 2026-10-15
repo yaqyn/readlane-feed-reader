@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/lib/pq"
 	nethtml "golang.org/x/net/html"
+	"os"
 	"strings"
 	"unicode"
 )
@@ -32,7 +33,8 @@ func cleanText(s string, max int) string {
 	}
 	return strings.Join(strings.Fields(b.String()), " ")
 }
-func summary(raw string) string {
+func summary(raw string) string { return plainText(raw, 500) }
+func plainText(raw string, limit int) string {
 	z := nethtml.NewTokenizer(strings.NewReader(raw))
 	var b strings.Builder
 	hidden := 0
@@ -56,11 +58,11 @@ func summary(raw string) string {
 		if kind == nethtml.TextToken && hidden == 0 {
 			b.Write(z.Text())
 		}
-		if b.Len() > 8192 {
+		if b.Len() > max(8192, limit*4) {
 			break
 		}
 	}
-	return cleanText(b.String(), 500)
+	return cleanText(b.String(), limit)
 }
 func validName(s string, max int) bool {
 	if strings.TrimSpace(s) == "" || len([]rune(s)) > max {
@@ -92,4 +94,36 @@ func databaseError(action string, err error) error {
 		}
 	}
 	return fmt.Errorf("%s: database operation failed", action)
+}
+
+// cliStyle keeps redirected output and NO_COLOR sessions free of ANSI escapes.
+func cliStyle(text, code string) string {
+	info, err := os.Stdout.Stat()
+	if err != nil || info.Mode()&os.ModeCharDevice == 0 || os.Getenv("TERM") == "dumb" {
+		return text
+	}
+	if _, present := os.LookupEnv("NO_COLOR"); present {
+		return text
+	}
+	return "\x1b[" + code + "m" + text + "\x1b[0m"
+}
+func wrapCLI(text string, width int, prefix string) string {
+	words := strings.Fields(text)
+	var lines []string
+	line := ""
+	for _, word := range words {
+		if line != "" && len([]rune(line))+1+len([]rune(word)) > width {
+			lines = append(lines, prefix+line)
+			line = word
+		} else {
+			if line != "" {
+				line += " "
+			}
+			line += word
+		}
+	}
+	if line != "" {
+		lines = append(lines, prefix+line)
+	}
+	return strings.Join(lines, "\n")
 }

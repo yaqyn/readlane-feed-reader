@@ -38,7 +38,7 @@ func handlerAddFeed(s *state, cmd command, user database.User) error {
 
 func handlerFeeds(s *state, cmd command) error {
 	if len(cmd.args) != 0 {
-		return fmt.Errorf("usage: readlane feeds")
+		return fmt.Errorf("usage: readlane sources")
 	}
 	feeds, err := s.db.GetFeeds(s.ctx)
 	if err != nil {

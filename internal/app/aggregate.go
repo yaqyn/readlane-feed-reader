@@ -14,7 +14,7 @@ const workerLockID int64 = 718421
 
 func handlerAgg(s *state, cmd command) error {
 	if len(cmd.args) < 1 || len(cmd.args) > 2 || (len(cmd.args) == 2 && cmd.args[1] != "--once") {
-		return fmt.Errorf("usage: readlane agg <interval> [--once]")
+		return fmt.Errorf("usage: readlane collect <interval> [--once]")
 	}
 	interval, err := time.ParseDuration(cmd.args[0])
 	if err != nil || interval < 5*time.Second {

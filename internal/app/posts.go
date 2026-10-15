@@ -40,9 +40,9 @@ func savePost(s *state, feedID uuid.UUID, item RSSItem) (int64, error) {
 }
 func handlerBrowse(s *state, cmd command, user database.User) error {
 	if len(cmd.args) > 2 {
-		return fmt.Errorf("usage: readlane browse [limit] [offset]")
+		return fmt.Errorf("usage: readlane read [limit] [offset]")
 	}
-	limit, offset := 2, 0
+	limit, offset := 5, 0
 	var err error
 	if len(cmd.args) > 0 {
 		limit, err = strconv.Atoi(cmd.args[0])
@@ -61,15 +61,20 @@ func handlerBrowse(s *state, cmd command, user database.User) error {
 		return databaseError("browse posts", err)
 	}
 	if len(posts) == 0 {
-		fmt.Println("No posts found. Follow a feed and run readlane agg 1m.")
+		fmt.Println("Your reading list is empty. Follow a source, then run readlane collect 1m --once.")
 		return nil
 	}
-	for _, p := range posts {
-		date := "unknown date"
+	fmt.Printf("%s\n%d posts for %s\n\n", cliStyle("Your reading list", "1;38;5;99"), len(posts), cleanText(user.Name, 100))
+	for i, p := range posts {
+		date := "Publication date unavailable"
 		if p.PublishedAt.Valid {
-			date = p.PublishedAt.Time.UTC().Format(time.RFC3339)
+			date = p.PublishedAt.Time.UTC().Format("02 Jan 2006, 15:04 UTC")
 		}
-		fmt.Printf("\n%s\n%s · %s\n%s\n%s\n", cleanText(p.Title, 300), cleanText(p.FeedName, 200), date, cleanText(p.Url, 4096), summary(p.Description))
+		fmt.Printf("%s\n   %s | %s\n", cliStyle(fmt.Sprintf("%d. %s", offset+i+1, cleanText(p.Title, 300)), "1"), cleanText(p.FeedName, 200), date)
+		if text := summary(p.Description); text != "" {
+			fmt.Print(wrapCLI(text, 72, "   ") + "\n")
+		}
+		fmt.Printf("   %s\n\n", cleanText(p.Url, 4096))
 	}
 	return nil
 }
