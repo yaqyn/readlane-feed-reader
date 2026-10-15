@@ -1,4 +1,4 @@
-![Readlane — an imaginative violet pixel world with a terminal dollar prompt and cursor.](readme-assets/readlane-cover.webp)
+![Readlane — RSS & Atom feeds. Read in your terminal. Pixel-art articles join a violet reading lane beside the dollar-prefixed readlane command.](readme-assets/readlane-cover.webp)
 
 # Readlane — a terminal-first feed reader
 

@@ -14,10 +14,12 @@ and palette. Marketing should show those working behaviors and avoid claims
 about unread tracking, full-article extraction, hosted accounts, or readership
 numbers that the application does not support.
 
-The cover imagines an abstract pixel world inside a terminal: floating digital
-platforms, dithered depth, and a violet path against a dark canvas. A large
-Readlane wordmark and a separate pixel-art dollar prompt with block cursor
-anchor the composition. It evokes the terminal without reproducing a screen.
+The cover imagines a reading world inside a terminal: article-shaped towers,
+bookmark silhouettes, and floating blog posts joining one violet lane. The
+pixel-art RSS sign connects the world to feeds. A large Readlane wordmark,
+a dollar-prefixed readlane command with cursor, and the purpose line
+“RSS & Atom feeds. Read in your terminal.” explain the product without
+reproducing a screen.
 Product text uses concrete labels:
 Reading list, Sources, Search, Feed summary, and Read original.
 
@@ -30,9 +32,7 @@ fonts; terminals use their user's own typeface. OFL license files are bundled.
 
 The built-in image generation tool produced the cover. The final prompt was:
 
-> Use case: ads-marketing. Asset type: imaginative Readlane README cover, wide landscape approximately 3:1. Create a distinctive art-directed PIXEL ART world that evokes life inside a terminal without literally depicting a terminal window or computer. Deep almost-black navy background #11121C, limited palette of off-white, slate, electric lilac and violet #AEA5FF, subtle tiny mint accents. On the RIGHT half: a surreal miniature digital landscape assembled from chunky pixel clusters, floating stepped platforms, crystalline rectangular towers, and a winding luminous violet pixel pathway suggesting a personal lane through information. Inventive negative space, deep atmospheric layers made through discrete dither patterns and hard-edged pixel shading, beautifully composed like a premium indie-game title screen. Objects should be abstract digital architecture, not realistic buildings, books, mountains or browser UI. Sparse tiny square particles suggest packets of stories traveling along the lane. Terminal feeling comes from disciplined alignment, character-cell proportions, restrained phosphor-like colors, dark negative space and command-line confidence; NOT from ASCII illustrations, code dumps, terminal frames or screenshots. LEFT 45 percent: very large clear exact wordmark "Readlane", R-e-a-d-l-a-n-e, in bold clean readable off-white geometric sans-serif letters with a subtle stepped pixel treatment only at outer corners, normal recognizable lowercase l. Wordmark around 40 percent of total canvas width, with generous empty dark space around it, nothing behind letters. No tagline, no extra text, no command symbols attached to letters. A handful of small violet pixels near the name ties the wordmark into the world. Crisp graphic contours, intentional chunky pixels, no smoothing blur, no gradients, no neon haze, no scanlines crossing letters, no laptop, no literal terminal UI, no paper/book illustration, no watermark. Creative, welcoming, memorable, sophisticated pixel art rather than generic retro hacking. The name must be effortlessly readable when the whole image is displayed at 600px wide. Opaque background.
->
-> Final edit: Use case: precise-object-edit. Edit this Readlane pixel-art cover. Preserve the entire floating violet pixel world, dark palette, large readable wordmark, composition, dimensions and all existing artwork. Add a clearly recognizable violet "$" shell-prompt symbol in chunky crisp pixel-art lettering in the empty dark area directly beneath the LEFT side of the Readlane wordmark, followed by a small separated solid violet block cursor: "$ ▋". Make these symbols large enough to recognize at 600px overall image width, about one third of the wordmark letter height. This is the familiar terminal prompt anchoring the imaginary digital world. Keep ample spacing from the wordmark, do not obscure letters. No other changes and no other added text. Opaque background.
+> Use case: ads-marketing. Edit target: supplied Readlane pixel-art README cover. Improve this successful concept, preserving the wide 3:1 composition, dark midnight canvas, violet and lilac limited palette, crisp chunky pixel art with dithered depth, floating islands, winding reading lane, and very large readable off-white "Readlane" wordmark on the left. Tie the right-hand digital world specifically to collecting and reading blogs: transform several abstract towers into elegant upright PIXEL ARTICLE PANELS with a bold headline bar and a few short horizontal pixel lines, no tiny legible text. Give a few panels bookmark-shaped silhouettes with a notched bottom. A few small pixel pages travel from separate floating islands into the central violet lane, suggesting chosen blog feeds coming together. Integrate a single subtle recognizable RSS broadcast glyph into a distant panel or sign, violet rather than orange. Keep the world abstract and imaginative, not a literal screenshot, not realistic books or a physical library, no browser chrome. Fewer, larger meaningful forms rather than clutter. LEFT typography hierarchy: preserve giant perfectly spelled "Readlane" as primary. Beneath it, put exactly "$ readlane" in medium-large lavender monospace pixel type, followed by a clearly separated solid block cursor. Beneath that put the exact purpose line "RSS & Atom feeds." and on the next line "Read in your terminal." in clean, bright off-white readable sans-serif type, NOT tiny or dim. Those two purpose lines should be at least half the height of the command letters; generous vertical spacing, clear hierarchy, all text on quiet empty dark background. Do not let any landscape overlap the text. Exact text only: "Readlane", "$ readlane", "RSS & Atom feeds.", "Read in your terminal.". No other words. Keep all text easily readable at a 700px total image width. Premium indie-game title art meets considered developer tool. No blur, no glow haze, no scanlines, no gradient backgrounds, no green hacker code, no watermark. Opaque background.
 
 The selected PNG was inspected for spelling and composition, then converted
 without resizing or cropping:
@@ -47,7 +47,7 @@ magick compare -metric AE source.png readlane-cover.webp null:
 exiftool -G1 -a -s readlane-cover.webp
 ```
 
-A 600-pixel-wide preview was inspected for text readability.
+A 700-pixel-wide preview was inspected for text readability.
 The pixel comparison reported **0 differences**. ExifTool confirmed a lossless
 WebP at 2172×724 with only the two author-credit fields as descriptive metadata.
 Structural image properties and filesystem timestamps are not embedded creator
