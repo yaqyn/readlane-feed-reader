@@ -74,6 +74,16 @@ func TestFetchCancellationAndCredentialRedaction(t *testing.T) {
 	}
 }
 func TestRejectUnsafeFeedURLs(t *testing.T) {
+	for _, raw := range []string{"https://example.com:0/feed", "https://example.com:65536/feed", "https://example.com:/feed"} {
+		if validateFeedURL(raw) == nil {
+			t.Errorf("accepted invalid port: %q", raw)
+		}
+	}
+	for _, raw := range []string{"https://example.com/feed", "http://localhost:1/feed", "http://[::1]:65535/feed"} {
+		if err := validateFeedURL(raw); err != nil {
+			t.Errorf("rejected valid URL %q: %v", raw, err)
+		}
+	}
 	for _, raw := range []string{"file:///etc/passwd", "javascript:alert(1)", "https://user:secret@example.com/feed", "/relative", "http://", "https://example.com/\x1b"} {
 		if validateFeedURL(raw) == nil {
 			t.Errorf("accepted %q", raw)

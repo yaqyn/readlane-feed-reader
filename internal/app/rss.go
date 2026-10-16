@@ -64,6 +64,14 @@ func validateFeedURL(raw string) error {
 	if u.User != nil {
 		return fmt.Errorf("feed URLs cannot contain credentials")
 	}
+	if port := u.Port(); port != "" {
+		number, err := strconv.Atoi(port)
+		if err != nil || number < 1 || number > 65535 {
+			return fmt.Errorf("feed URL port must be between 1 and 65535")
+		}
+	} else if strings.HasSuffix(u.Host, ":") {
+		return fmt.Errorf("feed URL port must not be empty")
+	}
 	return nil
 }
 
