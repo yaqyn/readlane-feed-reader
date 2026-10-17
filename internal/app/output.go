@@ -43,13 +43,13 @@ func plainText(raw string, limit int) string {
 		if kind == nethtml.ErrorToken {
 			break
 		}
-		if kind == nethtml.StartTagToken || kind == nethtml.EndTagToken {
+		if kind == nethtml.StartTagToken || kind == nethtml.EndTagToken || kind == nethtml.SelfClosingTagToken {
 			tag, _ := z.TagName()
 			name := string(tag)
 			if name == "script" || name == "style" {
 				if kind == nethtml.StartTagToken {
 					hidden++
-				} else if hidden > 0 {
+				} else if kind == nethtml.EndTagToken && hidden > 0 {
 					hidden--
 				}
 			}

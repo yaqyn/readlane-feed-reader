@@ -169,3 +169,11 @@ func TestRetryAfterAndBackoff(t *testing.T) {
 		t.Fatal("unexpected failure backoff")
 	}
 }
+
+func TestSummaryPreservesBoundariesAtSelfClosingTags(t *testing.T) {
+	for _, raw := range []string{"First<br/>second", "First<br />second", "First<hr/>second"} {
+		if got := summary(raw); got != "First second" {
+			t.Errorf("%q: %q", raw, got)
+		}
+	}
+}
