@@ -186,7 +186,7 @@ func parseFeed(b []byte, base *url.URL) (*RSSFeed, error) {
 		for _, entry := range atom.Entries {
 			link := ""
 			for _, l := range entry.Links {
-				if l.Rel == "" || l.Rel == "alternate" {
+				if (l.Rel == "" || l.Rel == "alternate") && strings.TrimSpace(l.Href) != "" {
 					link = l.Href
 					break
 				}
