@@ -1,5 +1,6 @@
 {
   "name": "readlane-ui-checks",
+  "license": "MIT",
   "private": true,
   "description": "Development-only checks for Readlane's optional embedded web reader",
   "scripts": {
