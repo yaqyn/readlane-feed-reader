@@ -154,6 +154,7 @@ type atomFeed struct {
 	Subtitle string   `xml:"subtitle"`
 	Entries  []struct {
 		Title string `xml:"title"`
+		ID    string `xml:"id"`
 		Links []struct {
 			Href string `xml:"href,attr"`
 			Rel  string `xml:"rel,attr"`
@@ -190,6 +191,9 @@ func parseFeed(b []byte, base *url.URL) (*RSSFeed, error) {
 					link = l.Href
 					break
 				}
+			}
+			if strings.TrimSpace(link) == "" {
+				link = strings.TrimSpace(entry.ID)
 			}
 			description := entry.Summary
 			if description == "" {
