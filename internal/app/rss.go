@@ -46,6 +46,10 @@ type RSSItem struct {
 	Link        string `xml:"link"`
 	Description string `xml:"description"`
 	PubDate     string `xml:"pubDate"`
+	GUID        struct {
+		Value       string `xml:",chardata"`
+		IsPermaLink string `xml:"isPermaLink,attr"`
+	} `xml:"guid"`
 }
 
 func validateFeedURL(raw string) error {
@@ -215,6 +219,9 @@ func parseFeed(b []byte, base *url.URL) (*RSSFeed, error) {
 		item.Title = html.UnescapeString(item.Title)
 		item.Description = html.UnescapeString(item.Description)
 		item.PubDate = strings.TrimSpace(item.PubDate)
+		if strings.TrimSpace(item.Link) == "" && item.GUID.IsPermaLink != "false" {
+			item.Link = strings.TrimSpace(item.GUID.Value)
+		}
 		if raw := strings.TrimSpace(item.Link); raw != "" {
 			if u, err := url.Parse(raw); err == nil {
 				if base != nil {

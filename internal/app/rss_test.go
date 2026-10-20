@@ -27,6 +27,14 @@ func TestFetchRSS(t *testing.T) {
 		t.Fatalf("unexpected feed: %+v", f)
 	}
 }
+func TestParseRSSUsesPermalinkGUIDWhenLinkIsMissing(t *testing.T) {
+	b := []byte(`<rss><channel><title>RSS</title><item><title>Post</title><guid>/posts/7#comments</guid></item><item><title>Opaque</title><guid isPermaLink="false">post-8</guid></item></channel></rss>`)
+	base, _ := url.Parse("https://example.com/feed.xml")
+	f, err := parseFeed(b, base)
+	if err != nil || f.Channel.Item[0].Link != "https://example.com/posts/7" || f.Channel.Item[1].Link != "" {
+		t.Fatalf("unexpected RSS GUID fallback: %+v %v", f, err)
+	}
+}
 func TestParseAtom(t *testing.T) {
 	b := []byte(`<feed xmlns="http://www.w3.org/2005/Atom"><title>Atom</title><entry><title>New post</title><link rel="self" href="/entry.xml"/><link rel="alternate" href="/post"/><content>&lt;p&gt;Content&lt;/p&gt;</content><updated>2026-10-14T10:00:00Z</updated></entry></feed>`)
 	base, _ := url.Parse("https://example.com/feed.xml")
