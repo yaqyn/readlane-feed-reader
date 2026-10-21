@@ -108,7 +108,7 @@ func TestIntegrationReaderScopeSearchAndErrors(t *testing.T) {
 	if w = readerRequest(bobHandler, "/api/reader?source="+feed.ID.String()); w.Code != 200 || strings.Contains(w.Body.String(), "PostgreSQL") {
 		t.Fatal("source filter leaked other user's post")
 	}
-	for _, path := range []string{"/api/reader?page=-1", "/api/reader?source=invalid", "/api/reader?q=" + strings.Repeat("x", 201)} {
+	for _, path := range []string{"/api/reader?page=-1", "/api/reader?source=invalid", "/api/reader?q=" + strings.Repeat("x", 201), "/api/reader?q=one&q=two", "/api/reader?unknown=value"} {
 		if w = readerRequest(aliceHandler, path); w.Code != 400 {
 			t.Errorf("accepted invalid query: %s", path)
 		}

@@ -115,13 +115,21 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 	mux.HandleFunc("GET /api/reader", func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
-		query := strings.TrimSpace(r.URL.Query().Get("q"))
+		values := r.URL.Query()
+		allowed := map[string]bool{"q": true, "source": true, "page": true}
+		for name, entries := range values {
+			if !allowed[name] || len(entries) > 1 {
+				readerJSON(w, 400, map[string]string{"error": "Unknown or duplicate reading-list filter."})
+				return
+			}
+		}
+		query := strings.TrimSpace(values.Get("q"))
 		if len([]rune(query)) > 200 {
 			readerJSON(w, 400, map[string]string{"error": "Search must contain 200 characters or fewer."})
 			return
 		}
 		source := uuid.NullUUID{}
-		if raw := r.URL.Query().Get("source"); raw != "" {
+		if raw := values.Get("source"); raw != "" {
 			id, err := uuid.Parse(raw)
 			if err != nil {
 				readerJSON(w, 400, map[string]string{"error": "Choose a valid source."})
@@ -130,7 +138,7 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			source = uuid.NullUUID{UUID: id, Valid: true}
 		}
 		page := 1
-		if raw := r.URL.Query().Get("page"); raw != "" {
+		if raw := values.Get("page"); raw != "" {
 			n, err := strconv.Atoi(raw)
 			if err != nil || n < 1 || n > 83334 {
 				readerJSON(w, 400, map[string]string{"error": "Choose a valid reading-list page."})
