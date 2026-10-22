@@ -85,15 +85,19 @@ func TestIntegrationReaderScopeSearchAndErrors(t *testing.T) {
 		t.Fatalf("reader: %d %s", w.Code, w.Body.String())
 	}
 	var result struct {
-		Posts []readerPost `json:"posts"`
-		Total int          `json:"total"`
-		Page  int          `json:"page"`
+		Posts    []readerPost `json:"posts"`
+		Total    int          `json:"total"`
+		Page     int          `json:"page"`
+		PageSize int          `json:"page_size"`
 	}
 	if err = json.Unmarshal(w.Body.Bytes(), &result); err != nil {
 		t.Fatal(err)
 	}
 	if result.Total != 1 || result.Page != 1 || len(result.Posts) != 1 {
 		t.Fatalf("search/pagination: %+v", result)
+	}
+	if w = readerRequest(aliceHandler, "/api/reader?page_size=1"); w.Code != 200 || !strings.Contains(w.Body.String(), `"page_size":1`) {
+		t.Fatalf("custom page size: %d %s", w.Code, w.Body.String())
 	}
 	if strings.Contains(result.Posts[0].Summary, "bad") {
 		t.Fatal("script text survived summary")
@@ -108,7 +112,7 @@ func TestIntegrationReaderScopeSearchAndErrors(t *testing.T) {
 	if w = readerRequest(bobHandler, "/api/reader?source="+feed.ID.String()); w.Code != 200 || strings.Contains(w.Body.String(), "PostgreSQL") {
 		t.Fatal("source filter leaked other user's post")
 	}
-	for _, path := range []string{"/api/reader?page=-1", "/api/reader?source=invalid", "/api/reader?q=" + strings.Repeat("x", 201), "/api/reader?q=one&q=two", "/api/reader?unknown=value"} {
+	for _, path := range []string{"/api/reader?page=-1", "/api/reader?page_size=0", "/api/reader?page_size=101", "/api/reader?page_size=bad", "/api/reader?source=invalid", "/api/reader?q=" + strings.Repeat("x", 201), "/api/reader?q=one&q=two", "/api/reader?unknown=value"} {
 		if w = readerRequest(aliceHandler, path); w.Code != 400 {
 			t.Errorf("accepted invalid query: %s", path)
 		}

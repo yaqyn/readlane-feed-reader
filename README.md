@@ -136,7 +136,7 @@ See the [terminal command reference](docs/terminal.md) for arguments, errors, pa
 readlane serve
 ```
 
-Open **http://127.0.0.1:8090**. Search posts, choose a source, and read stored feed summaries. The original article opens separately. The companion does not collect posts or change your data; keep using the terminal for those operations.
+Open **http://127.0.0.1:8090**. Search posts, choose a source, and read stored feed summaries. The original article opens separately. API clients can set `page_size=1..100` on `/api/reader`; the browser uses the default of 12. The companion does not collect posts or change your data; keep using the terminal for those operations.
 
 Use `--user alice` to choose a reader for that server process, or `--addr 127.0.0.1:8091` for another local port. Public bind addresses are rejected. Stop the server with **Ctrl+C**. See [web reader details](docs/web-reader.md).
 

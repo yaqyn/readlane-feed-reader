@@ -116,7 +116,7 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
 		values := r.URL.Query()
-		allowed := map[string]bool{"q": true, "source": true, "page": true}
+		allowed := map[string]bool{"q": true, "source": true, "page": true, "page_size": true}
 		for name, entries := range values {
 			if !allowed[name] || len(entries) > 1 {
 				readerJSON(w, 400, map[string]string{"error": "Unknown or duplicate reading-list filter."})
@@ -146,6 +146,15 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			}
 			page = n
 		}
+		pageSize := readerPageSize
+		if raw := values.Get("page_size"); raw != "" {
+			n, err := strconv.Atoi(raw)
+			if err != nil || n < 1 || n > 100 {
+				readerJSON(w, 400, map[string]string{"error": "Choose a page size from 1 to 100."})
+				return
+			}
+			pageSize = n
+		}
 		// Repeatable read keeps counts and page contents in the same snapshot.
 		tx, err := s.conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
 		if err != nil {
@@ -159,9 +168,9 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			readerFailure(w, err)
 			return
 		}
-		maxPage := max(1, int((count+readerPageSize-1)/readerPageSize))
+		maxPage := max(1, int((count+int64(pageSize)-1)/int64(pageSize)))
 		page = min(page, maxPage)
-		rows, err := q.GetReaderPosts(ctx, database.GetReaderPostsParams{UserID: user.ID, SourceID: source, Search: query, PageOffset: int32((page - 1) * readerPageSize), PageLimit: readerPageSize})
+		rows, err := q.GetReaderPosts(ctx, database.GetReaderPostsParams{UserID: user.ID, SourceID: source, Search: query, PageOffset: int32((page - 1) * pageSize), PageLimit: int32(pageSize)})
 		if err != nil {
 			readerFailure(w, err)
 			return
@@ -183,7 +192,7 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 		for _, row := range sources[:min(len(sources), 200)] {
 			sourceList = append(sourceList, readerSource{ID: row.ID.String(), Name: cleanText(row.Name, 200)})
 		}
-		readerJSON(w, 200, map[string]any{"posts": posts, "sources": sourceList, "sources_truncated": len(sources) > 200, "total": count, "page": page, "page_size": readerPageSize, "reader": cleanText(user.Name, 100)})
+		readerJSON(w, 200, map[string]any{"posts": posts, "sources": sourceList, "sources_truncated": len(sources) > 200, "total": count, "page": page, "page_size": pageSize, "reader": cleanText(user.Name, 100)})
 	})
 	mux.HandleFunc("GET /api/posts/{id}", func(w http.ResponseWriter, r *http.Request) {
 		id, err := uuid.Parse(r.PathValue("id"))
