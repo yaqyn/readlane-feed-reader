@@ -115,7 +115,11 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 	mux.HandleFunc("GET /api/reader", func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 		defer cancel()
-		values := r.URL.Query()
+		values, err := url.ParseQuery(r.URL.RawQuery)
+		if err != nil {
+			readerJSON(w, 400, map[string]string{"error": "Reading-list filters are not valid URL encoding."})
+			return
+		}
 		allowed := map[string]bool{"q": true, "source": true, "page": true, "page_size": true}
 		for name, entries := range values {
 			if !allowed[name] || len(entries) > 1 {
