@@ -77,6 +77,9 @@ func TestIntegrationReaderScopeSearchAndErrors(t *testing.T) {
 	if _, err = savePost(s, feed.ID, RSSItem{Title: "PostgreSQL patterns", Link: "https://example.com/post", Description: "<p>Useful reading</p><script>bad()</script>"}); err != nil {
 		t.Fatal(err)
 	}
+	if _, err = savePost(s, feed.ID, RSSItem{Title: "PostgreSQL indexing", Link: "https://example.com/indexing", Description: "More useful reading"}); err != nil {
+		t.Fatal(err)
+	}
 	bob := testUser(t, s, "bob")
 	aliceHandler := newReaderHandler(s, alice)
 	bobHandler := newReaderHandler(s, bob)
@@ -89,14 +92,18 @@ func TestIntegrationReaderScopeSearchAndErrors(t *testing.T) {
 		Total    int          `json:"total"`
 		Page     int          `json:"page"`
 		PageSize int          `json:"page_size"`
+		HasMore  bool         `json:"has_more"`
 	}
 	if err = json.Unmarshal(w.Body.Bytes(), &result); err != nil {
 		t.Fatal(err)
 	}
-	if result.Total != 1 || result.Page != 1 || len(result.Posts) != 1 {
+	if result.Total != 2 || result.Page != 1 || len(result.Posts) != 2 {
 		t.Fatalf("search/pagination: %+v", result)
 	}
-	if w = readerRequest(aliceHandler, "/api/reader?page_size=1"); w.Code != 200 || !strings.Contains(w.Body.String(), `"page_size":1`) {
+	if result.HasMore {
+		t.Fatal("single-page result reported another page")
+	}
+	if w = readerRequest(aliceHandler, "/api/reader?page_size=1&page=1"); w.Code != 200 || !strings.Contains(w.Body.String(), `"page_size":1`) || !strings.Contains(w.Body.String(), `"has_more":true`) {
 		t.Fatalf("custom page size: %d %s", w.Code, w.Body.String())
 	}
 	if strings.Contains(result.Posts[0].Summary, "bad") {
