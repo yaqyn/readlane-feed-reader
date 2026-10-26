@@ -196,7 +196,14 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 		for _, row := range sources[:min(len(sources), 200)] {
 			sourceList = append(sourceList, readerSource{ID: row.ID.String(), Name: cleanText(row.Name, 200)})
 		}
-		readerJSON(w, 200, map[string]any{"posts": posts, "sources": sourceList, "sources_truncated": len(sources) > 200, "total": count, "page": page, "pages": maxPage, "page_size": pageSize, "has_previous": page > 1, "has_more": page < maxPage, "reader": cleanText(user.Name, 100)})
+		var previousPage, nextPage any
+		if page > 1 {
+			previousPage = page - 1
+		}
+		if page < maxPage {
+			nextPage = page + 1
+		}
+		readerJSON(w, 200, map[string]any{"posts": posts, "sources": sourceList, "sources_truncated": len(sources) > 200, "total": count, "page": page, "pages": maxPage, "page_size": pageSize, "previous_page": previousPage, "next_page": nextPage, "has_previous": page > 1, "has_more": page < maxPage, "reader": cleanText(user.Name, 100)})
 	})
 	mux.HandleFunc("GET /api/posts/{id}", func(w http.ResponseWriter, r *http.Request) {
 		id, err := uuid.Parse(r.PathValue("id"))

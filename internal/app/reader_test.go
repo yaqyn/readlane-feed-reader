@@ -103,7 +103,7 @@ func TestIntegrationReaderScopeSearchAndErrors(t *testing.T) {
 	if result.HasMore {
 		t.Fatal("single-page result reported another page")
 	}
-	if w = readerRequest(aliceHandler, "/api/reader?page_size=1&page=1"); w.Code != 200 || !strings.Contains(w.Body.String(), `"page_size":1`) || !strings.Contains(w.Body.String(), `"pages":2`) || !strings.Contains(w.Body.String(), `"has_previous":false`) || !strings.Contains(w.Body.String(), `"has_more":true`) {
+	if w = readerRequest(aliceHandler, "/api/reader?page_size=1&page=1"); w.Code != 200 || !strings.Contains(w.Body.String(), `"page_size":1`) || !strings.Contains(w.Body.String(), `"previous_page":null`) || !strings.Contains(w.Body.String(), `"next_page":2`) || !strings.Contains(w.Body.String(), `"has_previous":false`) || !strings.Contains(w.Body.String(), `"has_more":true`) {
 		t.Fatalf("custom page size: %d %s", w.Code, w.Body.String())
 	}
 	if strings.Contains(result.Posts[0].Summary, "bad") {
