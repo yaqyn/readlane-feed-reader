@@ -228,7 +228,13 @@ func parseFeed(b []byte, base *url.URL) (*RSSFeed, error) {
 					u = base.ResolveReference(u)
 				}
 				u.Fragment = ""
-				item.Link = u.String()
+				if u.Scheme == "http" || u.Scheme == "https" {
+					item.Link = u.String()
+				} else {
+					item.Link = ""
+				}
+			} else {
+				item.Link = ""
 			}
 		}
 	}
