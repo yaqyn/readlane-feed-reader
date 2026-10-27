@@ -99,6 +99,17 @@ func TestFetchRejectsBadResponses(t *testing.T) {
 		})
 	}
 }
+
+func TestFetchRejectsHTMLContentTypeBeforeParsing(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		fmt.Fprint(w, `<rss><channel><title>Disguised</title></channel></rss>`)
+	}))
+	defer server.Close()
+	if _, err := fetchFeed(context.Background(), server.URL); err == nil || !strings.Contains(err.Error(), "HTML") {
+		t.Fatalf("accepted HTML response: %v", err)
+	}
+}
 func TestFetchCancellationAndCredentialRedaction(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
