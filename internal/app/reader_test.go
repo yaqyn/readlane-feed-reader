@@ -59,6 +59,9 @@ func TestReaderRejectsCrossSiteAndMutations(t *testing.T) {
 		if !strings.Contains(w.Header().Get("Content-Security-Policy"), "frame-ancestors 'none'") {
 			t.Fatal("missing CSP")
 		}
+		if w.Header().Get("Cross-Origin-Resource-Policy") != "same-origin" {
+			t.Fatal("missing same-origin resource policy")
+		}
 	}
 	if w := readerRequest(handler, "/missing"); w.Code != 404 {
 		t.Fatal("unknown page did not return 404")
