@@ -251,6 +251,11 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			readerJSON(w, 403, map[string]string{"error": "Cross-site requests are not supported."})
 			return
 		}
+		if r.Method == http.MethodOptions {
+			w.Header().Set("Allow", "GET, HEAD, OPTIONS")
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
 		if r.Method != http.MethodGet && r.Method != http.MethodHead {
 			w.Header().Set("Allow", "GET, HEAD")
 			readerJSON(w, 405, map[string]string{"error": "The companion reader is read-only."})

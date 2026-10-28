@@ -39,6 +39,7 @@ func TestReaderRejectsCrossSiteAndMutations(t *testing.T) {
 	}{
 		{"GET", "evil.example", "", "", 403}, {"GET", "127.0.0.1:8090", "https://evil.example", "", 403},
 		{"GET", "127.0.0.1:8090", "", "cross-site", 403}, {"POST", "localhost:8090", "", "", 405},
+		{"OPTIONS", "localhost:8090", "", "", 204},
 	}
 	for _, c := range cases {
 		r := httptest.NewRequest(c.method, "/api/reader", nil)
@@ -49,6 +50,9 @@ func TestReaderRejectsCrossSiteAndMutations(t *testing.T) {
 		handler.ServeHTTP(w, r)
 		if w.Code != c.want {
 			t.Errorf("boundary status %d want %d", w.Code, c.want)
+		}
+		if c.method == http.MethodOptions && w.Header().Get("Allow") != "GET, HEAD, OPTIONS" {
+			t.Error("OPTIONS omitted allowed methods")
 		}
 	}
 	for _, path := range []string{"/", "/assets/reader.css", "/assets/reader.js", "/assets/fonts/manrope.woff2"} {
