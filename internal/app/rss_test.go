@@ -62,6 +62,19 @@ func TestParseAtomUsesEntryIDWhenLinkIsMissing(t *testing.T) {
 		t.Fatalf("unexpected Atom ID fallback: %+v %v", f, err)
 	}
 }
+
+func TestFeedItemsExcludeNonWebLinkSchemes(t *testing.T) {
+	base, _ := url.Parse("https://example.com/feed.xml")
+	for _, document := range [][]byte{
+		[]byte(`<rss><channel><item><title>Post</title><link>javascript:alert(1)</link></item></channel></rss>`),
+		[]byte(`<feed xmlns="http://www.w3.org/2005/Atom"><entry><title>Post</title><id>tag:example.com,2026:post</id></entry></feed>`),
+	} {
+		feed, err := parseFeed(document, base)
+		if err != nil || len(feed.Channel.Item) != 1 || feed.Channel.Item[0].Link != "" {
+			t.Fatalf("unexpected non-web link: %+v %v", feed, err)
+		}
+	}
+}
 func TestFetchRejectsBadResponses(t *testing.T) {
 	for _, kind := range []string{"status", "malformed", "html", "oversized", "redirect-loop"} {
 		t.Run(kind, func(t *testing.T) {
