@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html"
 	"io"
+	"mime"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -139,6 +140,9 @@ func fetchFeedConditional(ctx context.Context, feedURL, etag, lastModified strin
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, meta, &feedHTTPError{Status: resp.StatusCode, RetryAfter: retryAfter(resp.Header.Get("Retry-After"), time.Now())}
+	}
+	if mediaType, _, err := mime.ParseMediaType(resp.Header.Get("Content-Type")); err == nil && mediaType == "text/html" {
+		return nil, meta, fmt.Errorf("feed returned an HTML document instead of XML")
 	}
 	b, err := io.ReadAll(io.LimitReader(resp.Body, maxFeedBytes+1))
 	if err != nil {
