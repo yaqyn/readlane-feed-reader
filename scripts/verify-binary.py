@@ -148,7 +148,8 @@ def main():
                 'GRANT CONNECT ON DATABASE "' + deployment + '" TO "' + role + '"; '
                 'GRANT USAGE ON SCHEMA public TO "' + role + '"; '
                 'GRANT SELECT, UPDATE ON feeds TO "' + role + '"; '
-                'GRANT INSERT, SELECT (url) ON posts TO "' + role + '";',
+                'GRANT INSERT, SELECT (id, url) ON posts TO "' + role + '"; '
+                'GRANT INSERT, SELECT (post_id, feed_id) ON post_sources TO "' + role + '";',
                 database_env,
             )
             sql("UPDATE feeds SET next_fetch_at = NOW()", database_env)

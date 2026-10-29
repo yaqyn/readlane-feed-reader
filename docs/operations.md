@@ -57,10 +57,11 @@ Run migrations using a schema owner. After applying them, a separate worker role
 GRANT CONNECT ON DATABASE readlane TO readlane_worker;
 GRANT USAGE ON SCHEMA public TO readlane_worker;
 GRANT SELECT, UPDATE ON feeds TO readlane_worker;
-GRANT INSERT, SELECT (url) ON posts TO readlane_worker;
+GRANT INSERT, SELECT (id, url) ON posts TO readlane_worker;
+GRANT INSERT, SELECT (post_id, feed_id) ON post_sources TO readlane_worker;
 ```
 
-The collector reads and updates feeds and inserts posts with application-generated UUIDs; no sequence grants are needed. The `SELECT (url)` grant is required by the explicit conflict target in `ON CONFLICT (url) DO NOTHING`. The worker role should not be used for registration, subscriptions, reset, migrations, or `doctor`. Use a separate private config/environment for the service, and an administrative CLI config for those operations. Never grant credentials to an untrusted user as a substitute for authentication.
+The collector reads and updates feeds, inserts posts with application-generated UUIDs, and adds feed associations for existing posts; no sequence grants are needed. The `SELECT (id, url)` grant lets the association insert find the canonical post. Limited `SELECT` on the association keys supports its idempotent conflict check. The worker role should not be used for registration, subscriptions, reset, migrations, or `doctor`. Use a separate private config/environment for the service, and an administrative CLI config for those operations. Never grant credentials to an untrusted user as a substitute for authentication.
 
 To customize the service's config file, use a systemd override with `Environment=READLANE_CONFIG=/absolute/path/to/worker-config.json`. Protect the file with mode `600`. The worker's read-only filesystem requires that config to already exist and be readable by the service account.
 
