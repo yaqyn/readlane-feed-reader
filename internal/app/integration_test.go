@@ -163,6 +163,91 @@ func TestIntegrationSubscriptionsAndUserIsolation(t *testing.T) {
 		t.Fatal("reset retained current user")
 	}
 }
+
+func TestIntegrationCrossPostedItemsAppearForEveryFollowingFeed(t *testing.T) {
+	s := integrationState(t)
+	alice := testUser(t, s, "alice")
+	addFeed := middlewareLoggedIn(handlerAddFeed)
+	if err := addFeed(s, command{args: []string{"First source", "https://first.example/feed"}}); err != nil {
+		t.Fatal(err)
+	}
+	first, err := s.db.GetFeedByURL(s.ctx, "https://first.example/feed")
+	if err != nil {
+		t.Fatal(err)
+	}
+	bob := testUser(t, s, "bob")
+	if err := addFeed(s, command{args: []string{"Second source", "https://second.example/feed"}}); err != nil {
+		t.Fatal(err)
+	}
+	second, err := s.db.GetFeedByURL(s.ctx, "https://second.example/feed")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.cfg.SetUser(alice.Name); err != nil {
+		t.Fatal(err)
+	}
+	if err := middlewareLoggedIn(handlerFollow)(s, command{args: []string{second.Url}}); err != nil {
+		t.Fatal(err)
+	}
+	article := RSSItem{Title: "Shared article", Link: "https://publisher.example/story"}
+	if inserted, err := savePost(s, first.ID, article); err != nil || inserted != 1 {
+		t.Fatalf("first source insert: %d %v", inserted, err)
+	}
+	if inserted, err := savePost(s, second.ID, article); err != nil || inserted != 0 {
+		t.Fatalf("cross-post deduplication: %d %v", inserted, err)
+	}
+	if inserted, err := savePost(s, second.ID, article); err != nil || inserted != 0 {
+		t.Fatalf("same-source deduplication: %d %v", inserted, err)
+	}
+
+	alicePosts, err := s.db.GetPostsForUser(s.ctx, database.GetPostsForUserParams{UserID: alice.ID, Limit: 10})
+	if err != nil || len(alicePosts) != 1 {
+		t.Fatalf("first source reading list: %d %v", len(alicePosts), err)
+	}
+	if alicePosts[0].FeedID != first.ID || alicePosts[0].FeedName != first.Name {
+		t.Fatalf("preferred source attribution: %+v", alicePosts[0])
+	}
+	bobPosts, err := s.db.GetPostsForUser(s.ctx, database.GetPostsForUserParams{UserID: bob.ID, Limit: 10})
+	if err != nil || len(bobPosts) != 1 {
+		t.Fatalf("second source reading list: %d %v", len(bobPosts), err)
+	}
+	if bobPosts[0].FeedID != second.ID || bobPosts[0].FeedName != second.Name {
+		t.Fatalf("cross-post source attribution: %+v", bobPosts[0])
+	}
+	readerPosts, err := s.db.GetReaderPosts(s.ctx, database.GetReaderPostsParams{UserID: alice.ID, PageLimit: 10})
+	if err != nil || len(readerPosts) != 1 {
+		t.Fatalf("reader contains duplicate article: %d %v", len(readerPosts), err)
+	}
+	readerPosts, err = s.db.GetReaderPosts(s.ctx, database.GetReaderPostsParams{UserID: alice.ID, SourceID: uuid.NullUUID{UUID: second.ID, Valid: true}, PageLimit: 10})
+	if err != nil || len(readerPosts) != 1 || readerPosts[0].FeedID != second.ID {
+		t.Fatalf("reader source filter: %+v %v", readerPosts, err)
+	}
+	count, err := s.db.CountReaderPosts(s.ctx, database.CountReaderPostsParams{UserID: alice.ID})
+	if err != nil || count != 1 {
+		t.Fatalf("reader count includes duplicate article: %d %v", count, err)
+	}
+	if _, err := s.db.GetReaderPost(s.ctx, database.GetReaderPostParams{UserID: bob.ID, ID: bobPosts[0].ID}); err != nil {
+		t.Fatalf("reader detail from second source: %v", err)
+	}
+	var posts, sources int
+	if err := s.conn.QueryRowContext(s.ctx, "SELECT count(*) FROM posts WHERE url = $1", article.Link).Scan(&posts); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.conn.QueryRowContext(s.ctx, "SELECT count(*) FROM post_sources").Scan(&sources); err != nil {
+		t.Fatal(err)
+	}
+	if posts != 1 || sources != 2 {
+		t.Fatalf("global deduplication and source associations: posts=%d sources=%d", posts, sources)
+	}
+	provider, err := migrations.Provider(s.conn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := provider.DownTo(s.ctx, 7); err == nil {
+		t.Fatal("rollback discarded a post's second source")
+	}
+}
+
 func TestIntegrationAddFeedRollsBackOnFollowFailure(t *testing.T) {
 	s := integrationState(t)
 	testUser(t, s, "alice")
@@ -323,6 +408,44 @@ func TestIntegrationMigrationsReversibleAndIdempotent(t *testing.T) {
 	}
 	if err = handlerDoctor(s, command{}); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestIntegrationPostSourcesMigrationBackfillsExistingPosts(t *testing.T) {
+	s := integrationState(t)
+	user := testUser(t, s, "migration-source")
+	if err := middlewareLoggedIn(handlerAddFeed)(s, command{args: []string{"Existing source", "https://existing.example/feed"}}); err != nil {
+		t.Fatal(err)
+	}
+	feed, err := s.db.GetFeedByURL(s.ctx, "https://existing.example/feed")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := savePost(s, feed.ID, RSSItem{Title: "Kept article", Link: "https://example.com/kept"}); err != nil {
+		t.Fatal(err)
+	}
+	provider, err := migrations.Provider(s.conn)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := provider.DownTo(s.ctx, 7); err != nil {
+		t.Fatal(err)
+	}
+	if err := migrations.Up(s.ctx, s.conn); err != nil {
+		t.Fatal(err)
+	}
+	var sources int
+	if err := s.conn.QueryRowContext(s.ctx, `
+		SELECT count(*) FROM post_sources
+		JOIN posts ON posts.id = post_sources.post_id
+		WHERE posts.url = $1 AND post_sources.feed_id = $2`, "https://example.com/kept", feed.ID).Scan(&sources); err != nil {
+		t.Fatal(err)
+	}
+	if sources != 1 {
+		t.Fatalf("existing post source was not restored: %d", sources)
+	}
+	if _, err := s.db.GetUser(s.ctx, user.Name); err != nil {
+		t.Fatalf("user data lost during source migration: %v", err)
 	}
 }
 

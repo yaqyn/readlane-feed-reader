@@ -199,7 +199,7 @@ Readlane runs on a trusted machine. Its reader names are not accounts or authori
 
 Requests have a 30-second timeout and an 8 MiB decoded-body limit. HTTPS-to-HTTP redirects are rejected. Feed text is stripped of terminal controls, and web summaries render as text rather than executable HTML. Publication dates that cannot be parsed stay unknown.
 
-Posts are deduplicated globally by URL and are not updated when an original article changes. A URL first stored by one source remains attached to that source. Pagination may shift as posts arrive. Summaries are feed content, not guaranteed full articles. Retention is manual, so storage grows over time.
+Posts are deduplicated globally by URL and are not updated when an original article changes. Every feed that publishes a URL is retained as a source, so followers can see cross-posted articles once and filter them by any followed source. The first source supplies the stored title, description, and publication date. Pagination may shift as posts arrive. Summaries are feed content, not guaranteed full articles. Retention is manual, so storage grows over time.
 
 The [operations guide](docs/operations.md) covers the hardened collector service, database roles, backups, recovery, and upgrades. The [migration guide](docs/migration.md) preserves existing data when moving from the course name. Font license notices are retained with the bundled assets; the generated cover's metadata contains only the owner's creator and copyright credits.
 

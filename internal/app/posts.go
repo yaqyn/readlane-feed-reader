@@ -36,7 +36,23 @@ func parsePublishedAt(raw string) sql.NullTime {
 
 func savePost(s *state, feedID uuid.UUID, item RSSItem) (int64, error) {
 	now := time.Now().UTC()
-	return s.db.CreatePost(s.ctx, database.CreatePostParams{ID: uuid.New(), CreatedAt: now, UpdatedAt: now, Title: item.Title, Url: item.Link, Description: item.Description, PublishedAt: parsePublishedAt(item.PubDate), FeedID: feedID})
+	tx, err := s.conn.BeginTx(s.ctx, nil)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback()
+	queries := s.db.WithTx(tx)
+	inserted, err := queries.CreatePost(s.ctx, database.CreatePostParams{ID: uuid.New(), CreatedAt: now, UpdatedAt: now, Title: item.Title, Url: item.Link, Description: item.Description, PublishedAt: parsePublishedAt(item.PubDate), FeedID: feedID})
+	if err != nil {
+		return 0, err
+	}
+	if err := queries.CreatePostSource(s.ctx, database.CreatePostSourceParams{Url: item.Link, FeedID: feedID}); err != nil {
+		return 0, err
+	}
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+	return inserted, nil
 }
 func handlerBrowse(s *state, cmd command, user database.User) error {
 	if len(cmd.args) > 2 {
