@@ -9,7 +9,10 @@ collector service is `deploy/readlane.service`. This checkout directory remains
 
 There is no database rename or destructive data migration in this rebrand.
 Your existing database URL continues to work, including a database called
-`gator`. Apply the new, non-destructive search index with `readlane migrate`.
+`gator`. `readlane migrate` applies the non-destructive search index and adds
+source associations for existing posts. Rolling back the source-association
+migration is refused if a post belongs to multiple feeds, since the previous
+schema cannot represent those relationships.
 
 Config lookup prefers `READLANE_CONFIG`, then `GATOR_CONFIG`. Without either,
 `~/.readlane.json` takes priority; if it is absent, the existing
