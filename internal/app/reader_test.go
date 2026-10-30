@@ -18,6 +18,7 @@ func readerRequest(handler http.Handler, target string) *httptest.ResponseRecord
 	handler.ServeHTTP(w, req)
 	return w
 }
+
 func TestLoopbackReaderAddress(t *testing.T) {
 	for _, addr := range []string{"127.0.0.1:8090", "[::1]:8090", "localhost:0"} {
 		if _, err := readerAddress(addr); err != nil {
@@ -30,6 +31,7 @@ func TestLoopbackReaderAddress(t *testing.T) {
 		}
 	}
 }
+
 func TestReaderRejectsCrossSiteAndMutations(t *testing.T) {
 	// Boundary checks must run before any database access.
 	handler := newReaderHandler(nil, database.User{})
@@ -37,8 +39,10 @@ func TestReaderRejectsCrossSiteAndMutations(t *testing.T) {
 		method, host, origin, site string
 		want                       int
 	}{
-		{"GET", "evil.example", "", "", 403}, {"GET", "127.0.0.1:8090", "https://evil.example", "", 403},
-		{"GET", "127.0.0.1:8090", "", "cross-site", 403}, {"POST", "localhost:8090", "", "", 405},
+		{"GET", "evil.example", "", "", 403},
+		{"GET", "127.0.0.1:8090", "https://evil.example", "", 403},
+		{"GET", "127.0.0.1:8090", "", "cross-site", 403},
+		{"POST", "localhost:8090", "", "", 405},
 		{"OPTIONS", "localhost:8090", "", "", 204},
 	}
 	for _, c := range cases {
@@ -71,6 +75,7 @@ func TestReaderRejectsCrossSiteAndMutations(t *testing.T) {
 		t.Fatal("unknown page did not return 404")
 	}
 }
+
 func TestIntegrationReaderScopeSearchAndErrors(t *testing.T) {
 	s := integrationState(t)
 	alice := testUser(t, s, "alice")
@@ -116,13 +121,19 @@ func TestIntegrationReaderScopeSearchAndErrors(t *testing.T) {
 	if w = readerRequest(aliceHandler, "/api/reader?summary_length=50"); w.Code != 200 {
 		t.Fatalf("custom summary length: %d %s", w.Code, w.Body.String())
 	} else {
-		var compact struct{ Posts []readerPost `json:"posts"` }
-		if err := json.Unmarshal(w.Body.Bytes(), &compact); err != nil || len(compact.Posts) == 0 || len([]rune(compact.Posts[0].Summary)) > 50 { t.Fatalf("summary limit: %s", w.Body.String()) }
+		var compact struct {
+			Posts []readerPost `json:"posts"`
+		}
+		if err := json.Unmarshal(w.Body.Bytes(), &compact); err != nil || len(compact.Posts) == 0 || len([]rune(compact.Posts[0].Summary)) > 50 {
+			t.Fatalf("summary limit: %s", w.Body.String())
+		}
 	}
 	if w = readerRequest(aliceHandler, "/api/reader?include_sources=false"); w.Code != 200 || strings.Contains(w.Body.String(), `"sources"`) {
 		t.Fatalf("source omission: %d %s", w.Code, w.Body.String())
 	}
-	if w = readerRequest(aliceHandler, "/api/reader?include_sources=1"); w.Code != 400 { t.Fatalf("invalid include_sources: %d %s", w.Code, w.Body.String()) }
+	if w = readerRequest(aliceHandler, "/api/reader?include_sources=1"); w.Code != 400 {
+		t.Fatalf("invalid include_sources: %d %s", w.Code, w.Body.String())
+	}
 	if strings.Contains(result.Posts[0].Summary, "bad") {
 		t.Fatal("script text survived summary")
 	}

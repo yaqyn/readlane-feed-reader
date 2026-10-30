@@ -53,6 +53,7 @@ func readerAddress(raw string) (string, error) {
 	}
 	return net.JoinHostPort(host, port), nil
 }
+
 func handlerServe(s *state, cmd command) error {
 	flags := flag.NewFlagSet("serve", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
@@ -95,6 +96,7 @@ func handlerServe(s *state, cmd command) error {
 	}
 	return err
 }
+
 func newReaderHandler(s *state, user database.User) http.Handler {
 	mux := http.NewServeMux()
 	files, _ := fs.Sub(web.Assets, "assets")
@@ -171,7 +173,8 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 		includeSources := true
 		switch values.Get("include_sources") {
 		case "", "true":
-		case "false": includeSources = false
+		case "false":
+			includeSources = false
 		default:
 			readerJSON(w, 400, map[string]string{"error": "include_sources must be true or false."})
 			return
@@ -293,6 +296,7 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 		mux.ServeHTTP(w, r)
 	})
 }
+
 func toReaderPost(id uuid.UUID, title, source string, sourceID uuid.UUID, link, description string, date sql.NullTime, limit int) readerPost {
 	if validateFeedURL(link) != nil {
 		link = ""
@@ -307,11 +311,13 @@ func toReaderPost(id uuid.UUID, title, source string, sourceID uuid.UUID, link, 
 	}
 	return post
 }
+
 func readerJSON(w http.ResponseWriter, status int, value any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(value)
 }
+
 func readerFailure(w http.ResponseWriter, err error) {
 	slog.Error("reader database request failed", "error", databaseError("read posts", err))
 	readerJSON(w, 503, map[string]string{"error": "Your reading list is temporarily unavailable. Check PostgreSQL, then try again."})
