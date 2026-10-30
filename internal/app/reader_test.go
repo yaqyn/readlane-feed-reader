@@ -113,6 +113,12 @@ func TestIntegrationReaderScopeSearchAndErrors(t *testing.T) {
 	if w = readerRequest(aliceHandler, "/api/reader?page_size=1&page=1"); w.Code != 200 || !strings.Contains(w.Body.String(), `"page_size":1`) || !strings.Contains(w.Body.String(), `"previous_page":null`) || !strings.Contains(w.Body.String(), `"next_page":2`) || !strings.Contains(w.Body.String(), `"has_previous":false`) || !strings.Contains(w.Body.String(), `"has_more":true`) {
 		t.Fatalf("custom page size: %d %s", w.Code, w.Body.String())
 	}
+	if w = readerRequest(aliceHandler, "/api/reader?summary_length=50"); w.Code != 200 {
+		t.Fatalf("custom summary length: %d %s", w.Code, w.Body.String())
+	} else {
+		var compact struct{ Posts []readerPost `json:"posts"` }
+		if err := json.Unmarshal(w.Body.Bytes(), &compact); err != nil || len(compact.Posts) == 0 || len([]rune(compact.Posts[0].Summary)) > 50 { t.Fatalf("summary limit: %s", w.Body.String()) }
+	}
 	if strings.Contains(result.Posts[0].Summary, "bad") {
 		t.Fatal("script text survived summary")
 	}
@@ -126,7 +132,7 @@ func TestIntegrationReaderScopeSearchAndErrors(t *testing.T) {
 	if w = readerRequest(bobHandler, "/api/reader?source="+feed.ID.String()); w.Code != 200 || strings.Contains(w.Body.String(), "PostgreSQL") {
 		t.Fatal("source filter leaked other user's post")
 	}
-	for _, path := range []string{"/api/reader?q=%ZZ", "/api/reader?page=-1", "/api/reader?page_size=0", "/api/reader?page_size=101", "/api/reader?page_size=bad", "/api/reader?source=invalid", "/api/reader?q=" + strings.Repeat("x", 201), "/api/reader?q=one&q=two", "/api/reader?unknown=value"} {
+	for _, path := range []string{"/api/reader?q=%ZZ", "/api/reader?page=-1", "/api/reader?page_size=0", "/api/reader?page_size=101", "/api/reader?page_size=bad", "/api/reader?summary_length=49", "/api/reader?summary_length=2001", "/api/reader?source=invalid", "/api/reader?q=" + strings.Repeat("x", 201), "/api/reader?q=one&q=two", "/api/reader?unknown=value"} {
 		if w = readerRequest(aliceHandler, path); w.Code != 400 {
 			t.Errorf("accepted invalid query: %s", path)
 		}

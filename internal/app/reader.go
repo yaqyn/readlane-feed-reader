@@ -120,7 +120,7 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			readerJSON(w, 400, map[string]string{"error": "Reading-list filters are not valid URL encoding."})
 			return
 		}
-		allowed := map[string]bool{"q": true, "source": true, "page": true, "page_size": true}
+		allowed := map[string]bool{"q": true, "source": true, "page": true, "page_size": true, "summary_length": true}
 		for name, entries := range values {
 			if !allowed[name] || len(entries) > 1 {
 				readerJSON(w, 400, map[string]string{"error": "Unknown or duplicate reading-list filter."})
@@ -159,6 +159,15 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			}
 			pageSize = n
 		}
+		summaryLength := 500
+		if raw := values.Get("summary_length"); raw != "" {
+			n, err := strconv.Atoi(raw)
+			if err != nil || n < 50 || n > 2000 {
+				readerJSON(w, 400, map[string]string{"error": "Choose a summary length from 50 to 2000."})
+				return
+			}
+			summaryLength = n
+		}
 		// Repeatable read keeps counts and page contents in the same snapshot.
 		tx, err := s.conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
 		if err != nil {
@@ -190,7 +199,7 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 		}
 		posts := make([]readerPost, 0, len(rows))
 		for _, row := range rows {
-			posts = append(posts, toReaderPost(row.ID, row.Title, row.FeedName, row.FeedID, row.Url, row.Description, row.PublishedAt, 500))
+			posts = append(posts, toReaderPost(row.ID, row.Title, row.FeedName, row.FeedID, row.Url, row.Description, row.PublishedAt, summaryLength))
 		}
 		sourceList := make([]readerSource, 0, min(len(sources), 200))
 		for _, row := range sources[:min(len(sources), 200)] {
