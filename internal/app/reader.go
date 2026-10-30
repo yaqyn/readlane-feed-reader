@@ -120,7 +120,7 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			readerJSON(w, 400, map[string]string{"error": "Reading-list filters are not valid URL encoding."})
 			return
 		}
-		allowed := map[string]bool{"q": true, "source": true, "page": true, "page_size": true, "summary_length": true}
+		allowed := map[string]bool{"q": true, "source": true, "page": true, "page_size": true, "summary_length": true, "include_sources": true}
 		for name, entries := range values {
 			if !allowed[name] || len(entries) > 1 {
 				readerJSON(w, 400, map[string]string{"error": "Unknown or duplicate reading-list filter."})
@@ -168,6 +168,14 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			}
 			summaryLength = n
 		}
+		includeSources := true
+		switch values.Get("include_sources") {
+		case "", "true":
+		case "false": includeSources = false
+		default:
+			readerJSON(w, 400, map[string]string{"error": "include_sources must be true or false."})
+			return
+		}
 		// Repeatable read keeps counts and page contents in the same snapshot.
 		tx, err := s.conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
 		if err != nil {
@@ -188,10 +196,13 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			readerFailure(w, err)
 			return
 		}
-		sources, err := q.GetReaderSources(ctx, user.ID)
-		if err != nil {
-			readerFailure(w, err)
-			return
+		var sources []database.GetReaderSourcesRow
+		if includeSources {
+			sources, err = q.GetReaderSources(ctx, user.ID)
+			if err != nil {
+				readerFailure(w, err)
+				return
+			}
 		}
 		if err = tx.Commit(); err != nil {
 			readerFailure(w, err)
@@ -212,7 +223,12 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 		if page < maxPage {
 			nextPage = page + 1
 		}
-		readerJSON(w, 200, map[string]any{"posts": posts, "sources": sourceList, "sources_truncated": len(sources) > 200, "total": count, "page": page, "pages": maxPage, "page_size": pageSize, "previous_page": previousPage, "next_page": nextPage, "has_previous": page > 1, "has_more": page < maxPage, "reader": cleanText(user.Name, 100)})
+		payload := map[string]any{"posts": posts, "total": count, "page": page, "pages": maxPage, "page_size": pageSize, "previous_page": previousPage, "next_page": nextPage, "has_previous": page > 1, "has_more": page < maxPage, "reader": cleanText(user.Name, 100)}
+		if includeSources {
+			payload["sources"] = sourceList
+			payload["sources_truncated"] = len(sources) > 200
+		}
+		readerJSON(w, 200, payload)
 	})
 	mux.HandleFunc("GET /api/posts/{id}", func(w http.ResponseWriter, r *http.Request) {
 		id, err := uuid.Parse(r.PathValue("id"))

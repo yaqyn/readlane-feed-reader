@@ -119,6 +119,10 @@ func TestIntegrationReaderScopeSearchAndErrors(t *testing.T) {
 		var compact struct{ Posts []readerPost `json:"posts"` }
 		if err := json.Unmarshal(w.Body.Bytes(), &compact); err != nil || len(compact.Posts) == 0 || len([]rune(compact.Posts[0].Summary)) > 50 { t.Fatalf("summary limit: %s", w.Body.String()) }
 	}
+	if w = readerRequest(aliceHandler, "/api/reader?include_sources=false"); w.Code != 200 || strings.Contains(w.Body.String(), `"sources"`) {
+		t.Fatalf("source omission: %d %s", w.Code, w.Body.String())
+	}
+	if w = readerRequest(aliceHandler, "/api/reader?include_sources=1"); w.Code != 400 { t.Fatalf("invalid include_sources: %d %s", w.Code, w.Body.String()) }
 	if strings.Contains(result.Posts[0].Summary, "bad") {
 		t.Fatal("script text survived summary")
 	}
