@@ -244,6 +244,9 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			payload["sources"] = sourceList
 			payload["sources_truncated"] = len(sources) > 200
 		}
+		w.Header().Set("X-Result-Count", strconv.Itoa(len(posts)))
+		w.Header().Set("X-Total-Count", strconv.FormatInt(count, 10))
+		w.Header().Set("X-Has-More", strconv.FormatBool(page < maxPage))
 		readerJSON(w, 200, payload)
 	})
 	mux.HandleFunc("GET /api/posts/{id}", func(w http.ResponseWriter, r *http.Request) {
