@@ -30,7 +30,7 @@ type readerPost struct {
 	Source      string     `json:"source"`
 	SourceID    string     `json:"source_id"`
 	URL         string     `json:"url"`
-	Summary     string     `json:"summary"`
+	Summary     string     `json:"summary,omitempty"`
 	PublishedAt *time.Time `json:"published_at"`
 }
 type readerSource struct {
@@ -122,7 +122,7 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			readerJSON(w, 400, map[string]string{"error": "Reading-list filters are not valid URL encoding."})
 			return
 		}
-		allowed := map[string]bool{"q": true, "source": true, "page": true, "page_size": true, "summary_length": true, "include_sources": true}
+		allowed := map[string]bool{"q": true, "source": true, "page": true, "page_size": true, "summary_length": true, "include_sources": true, "include_summary": true}
 		for name, entries := range values {
 			if !allowed[name] || len(entries) > 1 {
 				readerJSON(w, 400, map[string]string{"error": "Unknown or duplicate reading-list filter."})
@@ -179,6 +179,15 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			readerJSON(w, 400, map[string]string{"error": "include_sources must be true or false."})
 			return
 		}
+		includeSummary := true
+		switch values.Get("include_summary") {
+		case "", "true":
+		case "false":
+			includeSummary = false
+		default:
+			readerJSON(w, 400, map[string]string{"error": "include_summary must be true or false."})
+			return
+		}
 		// Repeatable read keeps counts and page contents in the same snapshot.
 		tx, err := s.conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
 		if err != nil {
@@ -213,7 +222,11 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 		}
 		posts := make([]readerPost, 0, len(rows))
 		for _, row := range rows {
-			posts = append(posts, toReaderPost(row.ID, row.Title, row.FeedName, row.FeedID, row.Url, row.Description, row.PublishedAt, summaryLength))
+			post := toReaderPost(row.ID, row.Title, row.FeedName, row.FeedID, row.Url, row.Description, row.PublishedAt, summaryLength)
+			if !includeSummary {
+				post.Summary = ""
+			}
+			posts = append(posts, post)
 		}
 		sourceList := make([]readerSource, 0, min(len(sources), 200))
 		for _, row := range sources[:min(len(sources), 200)] {
@@ -231,6 +244,9 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			payload["sources"] = sourceList
 			payload["sources_truncated"] = len(sources) > 200
 		}
+		w.Header().Set("X-Result-Count", strconv.Itoa(len(posts)))
+		w.Header().Set("X-Total-Count", strconv.FormatInt(count, 10))
+		w.Header().Set("X-Has-More", strconv.FormatBool(page < maxPage))
 		readerJSON(w, 200, payload)
 	})
 	mux.HandleFunc("GET /api/posts/{id}", func(w http.ResponseWriter, r *http.Request) {

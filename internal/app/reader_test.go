@@ -118,6 +118,9 @@ func TestIntegrationReaderScopeSearchAndErrors(t *testing.T) {
 	if w = readerRequest(aliceHandler, "/api/reader?page_size=1&page=1"); w.Code != 200 || !strings.Contains(w.Body.String(), `"page_size":1`) || !strings.Contains(w.Body.String(), `"previous_page":null`) || !strings.Contains(w.Body.String(), `"next_page":2`) || !strings.Contains(w.Body.String(), `"has_previous":false`) || !strings.Contains(w.Body.String(), `"has_more":true`) {
 		t.Fatalf("custom page size: %d %s", w.Code, w.Body.String())
 	}
+	if w.Header().Get("X-Result-Count") != "1" || w.Header().Get("X-Total-Count") != "2" || w.Header().Get("X-Has-More") != "true" {
+		t.Fatalf("pagination headers: %v", w.Header())
+	}
 	if w = readerRequest(aliceHandler, "/api/reader?summary_length=50"); w.Code != 200 {
 		t.Fatalf("custom summary length: %d %s", w.Code, w.Body.String())
 	} else {
@@ -130,6 +133,12 @@ func TestIntegrationReaderScopeSearchAndErrors(t *testing.T) {
 	}
 	if w = readerRequest(aliceHandler, "/api/reader?include_sources=false"); w.Code != 200 || strings.Contains(w.Body.String(), `"sources"`) {
 		t.Fatalf("source omission: %d %s", w.Code, w.Body.String())
+	}
+	if w = readerRequest(aliceHandler, "/api/reader?include_summary=false"); w.Code != 200 || strings.Contains(w.Body.String(), `"summary"`) {
+		t.Fatalf("summary omission: %d %s", w.Code, w.Body.String())
+	}
+	if w = readerRequest(aliceHandler, "/api/reader?include_summary=1"); w.Code != 400 {
+		t.Fatalf("invalid include_summary: %d %s", w.Code, w.Body.String())
 	}
 	if w = readerRequest(aliceHandler, "/api/reader?include_sources=1"); w.Code != 400 {
 		t.Fatalf("invalid include_sources: %d %s", w.Code, w.Body.String())
