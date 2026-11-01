@@ -393,6 +393,16 @@ document.addEventListener("click", (event) => {
     navigate(u.pathname + u.search);
   }
 });
+document.addEventListener("keydown", (event) => {
+  const editing = ["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName) || event.target.isContentEditable;
+  if (event.key === "/" && !editing && !$('search-form').hidden) {
+    event.preventDefault();
+    $("search").focus();
+  } else if (event.key === "Escape" && location.pathname.startsWith("/posts/")) {
+    event.preventDefault();
+    navigate(listURL());
+  }
+});
 window.addEventListener("popstate", async () => {
   const y = history.state?.scroll || 0;
   await renderRoute(false);

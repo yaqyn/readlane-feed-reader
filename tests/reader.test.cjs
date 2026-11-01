@@ -186,3 +186,13 @@ test("IME composition does not dispatch a half-composed search", async (t) => {
   await until(() => calls === 2);
   assert.match(w.location.search, /q=/);
 });
+test("keyboard shortcuts focus search and return from details", async (t) => {
+  const w = setup(t, (url) => (url.startsWith("/api/posts/") ? post : library));
+  await until(() => w.document.querySelector(".story"));
+  w.document.dispatchEvent(new w.KeyboardEvent("keydown", { key: "/", bubbles: true, cancelable: true }));
+  assert.equal(w.document.activeElement.id, "search");
+  w.document.querySelector(".story h2 a").click();
+  await until(() => w.document.querySelector(".detail"));
+  w.document.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
+  await until(() => w.location.pathname === "/" && w.document.querySelector(".story"));
+});
