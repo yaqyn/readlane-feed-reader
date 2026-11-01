@@ -211,7 +211,21 @@ function drawDetail(post, focus) {
     ),
   );
   const external = originalLink(post, true);
-  if (external) article.append(external);
+  if (external) {
+    const copy = element("button", "button", "Copy story link");
+    copy.type = "button";
+    const status = element("span", "muted");
+    status.setAttribute("role", "status");
+    copy.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(post.url);
+        status.textContent = " Story link copied.";
+      } catch {
+        status.textContent = " Copy the address from Read original.";
+      }
+    });
+    article.append(external, copy, status);
+  }
   $("content").replaceChildren(article);
   if (focus) {
     window.scrollTo(0, 0);
