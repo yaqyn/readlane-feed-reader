@@ -408,11 +408,16 @@ document.addEventListener("click", (event) => {
   }
 });
 document.addEventListener("keydown", (event) => {
-  const editing = ["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName) || event.target.isContentEditable;
-  if (event.key === "/" && !editing && !$('search-form').hidden) {
+  const editing =
+    ["INPUT", "TEXTAREA", "SELECT"].includes(event.target.tagName) ||
+    event.target.isContentEditable;
+  if (event.key === "/" && !editing && !$("search-form").hidden) {
     event.preventDefault();
     $("search").focus();
-  } else if (event.key === "Escape" && location.pathname.startsWith("/posts/")) {
+  } else if (
+    event.key === "Escape" &&
+    location.pathname.startsWith("/posts/")
+  ) {
     event.preventDefault();
     navigate(listURL());
   }

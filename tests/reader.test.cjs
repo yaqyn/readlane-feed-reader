@@ -189,23 +189,51 @@ test("IME composition does not dispatch a half-composed search", async (t) => {
 test("keyboard shortcuts focus search and return from details", async (t) => {
   const w = setup(t, (url) => (url.startsWith("/api/posts/") ? post : library));
   await until(() => w.document.querySelector(".story"));
-  w.document.dispatchEvent(new w.KeyboardEvent("keydown", { key: "/", bubbles: true, cancelable: true }));
+  w.document.dispatchEvent(
+    new w.KeyboardEvent("keydown", {
+      key: "/",
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
   assert.equal(w.document.activeElement.id, "search");
   w.document.querySelector(".story h2 a").click();
   await until(() => w.document.querySelector(".detail"));
-  w.document.dispatchEvent(new w.KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true }));
-  await until(() => w.location.pathname === "/" && w.document.querySelector(".story"));
+  w.document.dispatchEvent(
+    new w.KeyboardEvent("keydown", {
+      key: "Escape",
+      bubbles: true,
+      cancelable: true,
+    }),
+  );
+  await until(
+    () => w.location.pathname === "/" && w.document.querySelector(".story"),
+  );
 });
 test("detail view can copy the original story link", async (t) => {
-  const w = setup(t, (url) => (url.startsWith("/api/posts/") ? post : library), `/posts/${post.id}`);
+  const w = setup(
+    t,
+    (url) => (url.startsWith("/api/posts/") ? post : library),
+    `/posts/${post.id}`,
+  );
   let copied = "";
   Object.defineProperty(w.navigator, "clipboard", {
-    value: { writeText: async (value) => { copied = value; } },
+    value: {
+      writeText: async (value) => {
+        copied = value;
+      },
+    },
     configurable: true,
   });
   await until(() => w.document.querySelector(".detail"));
-  const button = [...w.document.querySelectorAll(".detail button")].find((node) => node.textContent === "Copy story link");
+  const button = [...w.document.querySelectorAll(".detail button")].find(
+    (node) => node.textContent === "Copy story link",
+  );
   button.click();
-  await until(() => copied === post.url && /copied/i.test(button.nextElementSibling.textContent));
+  await until(
+    () =>
+      copied === post.url &&
+      /copied/i.test(button.nextElementSibling.textContent),
+  );
   assert.match(button.nextElementSibling.textContent, /copied/i);
 });
