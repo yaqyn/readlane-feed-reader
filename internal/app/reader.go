@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -284,7 +285,19 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			readerFailure(w, err)
 			return
 		}
-		readerJSON(w, 200, toReaderPost(row.ID, row.Title, row.FeedName, row.FeedID, row.Url, row.Description, row.PublishedAt, 12000))
+		post := toReaderPost(row.ID, row.Title, row.FeedName, row.FeedID, row.Url, row.Description, row.PublishedAt, 12000)
+		body, err := json.Marshal(post)
+		if err != nil {
+			readerFailure(w, err)
+			return
+		}
+		etag := fmt.Sprintf("\"%x\"", sha256.Sum256(body))
+		w.Header().Set("ETag", etag)
+		if r.Header.Get("If-None-Match") == etag {
+			w.WriteHeader(http.StatusNotModified)
+			return
+		}
+		readerJSON(w, 200, post)
 	})
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")

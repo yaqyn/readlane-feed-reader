@@ -153,6 +153,15 @@ func TestIntegrationReaderScopeSearchAndErrors(t *testing.T) {
 	if w = readerRequest(aliceHandler, "/api/posts/"+id); w.Code != 200 {
 		t.Fatal("could not read owned post")
 	}
+	etag := w.Header().Get("ETag")
+	request := httptest.NewRequest("GET", "/api/posts/"+id, nil)
+	request.Host = "127.0.0.1:8090"
+	request.Header.Set("If-None-Match", etag)
+	w = httptest.NewRecorder()
+	aliceHandler.ServeHTTP(w, request)
+	if etag == "" || w.Code != http.StatusNotModified || w.Body.Len() != 0 {
+		t.Fatalf("conditional post response: etag=%q status=%d body=%q", etag, w.Code, w.Body.String())
+	}
 	if w = readerRequest(bobHandler, "/api/posts/"+id); w.Code != 404 {
 		t.Fatal("post ID exposed another user's post")
 	}
