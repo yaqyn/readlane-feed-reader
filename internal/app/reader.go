@@ -247,6 +247,24 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 		w.Header().Set("X-Result-Count", strconv.Itoa(len(posts)))
 		w.Header().Set("X-Total-Count", strconv.FormatInt(count, 10))
 		w.Header().Set("X-Has-More", strconv.FormatBool(page < maxPage))
+		links := []string{}
+		for _, target := range []struct {
+			page int
+			rel  string
+		}{{page - 1, "prev"}, {page + 1, "next"}} {
+			if target.page < 1 || target.page > maxPage {
+				continue
+			}
+			pageQuery := url.Values{}
+			for name, entries := range values {
+				pageQuery[name] = append([]string(nil), entries...)
+			}
+			pageQuery.Set("page", strconv.Itoa(target.page))
+			links = append(links, "</api/reader?"+pageQuery.Encode()+">; rel=\""+target.rel+"\"")
+		}
+		if len(links) > 0 {
+			w.Header().Set("Link", strings.Join(links, ", "))
+		}
 		readerJSON(w, 200, payload)
 	})
 	mux.HandleFunc("GET /api/posts/{id}", func(w http.ResponseWriter, r *http.Request) {
