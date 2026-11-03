@@ -340,9 +340,17 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			readerJSON(w, 404, map[string]string{"error": "This reader endpoint does not exist."})
 			return
 		}
+		if r.Method == http.MethodHead {
+			mux.ServeHTTP(&readerHeadResponseWriter{ResponseWriter: w}, r)
+			return
+		}
 		mux.ServeHTTP(w, r)
 	})
 }
+
+type readerHeadResponseWriter struct{ http.ResponseWriter }
+
+func (w *readerHeadResponseWriter) Write(body []byte) (int, error) { return len(body), nil }
 
 func toReaderPost(id uuid.UUID, title, source string, sourceID uuid.UUID, link, description string, date sql.NullTime, limit int) readerPost {
 	if validateFeedURL(link) != nil {

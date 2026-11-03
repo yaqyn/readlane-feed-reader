@@ -121,6 +121,13 @@ func TestIntegrationReaderScopeSearchAndErrors(t *testing.T) {
 	if w.Header().Get("X-Result-Count") != "1" || w.Header().Get("X-Total-Count") != "2" || w.Header().Get("X-Has-More") != "true" {
 		t.Fatalf("pagination headers: %v", w.Header())
 	}
+	headRequest := httptest.NewRequest(http.MethodHead, "/api/reader?page_size=1", nil)
+	headRequest.Host = "127.0.0.1:8090"
+	head := httptest.NewRecorder()
+	aliceHandler.ServeHTTP(head, headRequest)
+	if head.Code != http.StatusOK || head.Body.Len() != 0 || head.Header().Get("X-Result-Count") != "1" {
+		t.Fatalf("reader HEAD: %d headers=%v body=%q", head.Code, head.Header(), head.Body.String())
+	}
 	if link := w.Header().Get("Link"); !strings.Contains(link, "page=2") || !strings.Contains(link, `rel="next"`) {
 		t.Fatalf("pagination link: %q", link)
 	}
