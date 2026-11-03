@@ -286,6 +286,7 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			return
 		}
 		post := toReaderPost(row.ID, row.Title, row.FeedName, row.FeedID, row.Url, row.Description, row.PublishedAt, 12000)
+		w.Header().Set("Content-Location", "/api/posts/"+post.ID)
 		body, err := json.Marshal(post)
 		if err != nil {
 			readerFailure(w, err)

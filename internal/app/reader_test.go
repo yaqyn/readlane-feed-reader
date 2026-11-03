@@ -160,6 +160,9 @@ func TestIntegrationReaderScopeSearchAndErrors(t *testing.T) {
 	if w = readerRequest(aliceHandler, "/api/posts/"+id); w.Code != 200 {
 		t.Fatal("could not read owned post")
 	}
+	if w.Header().Get("Content-Location") != "/api/posts/"+id {
+		t.Fatalf("post content location: %q", w.Header().Get("Content-Location"))
+	}
 	etag := w.Header().Get("ETag")
 	request := httptest.NewRequest("GET", "/api/posts/"+id, nil)
 	request.Host = "127.0.0.1:8090"
