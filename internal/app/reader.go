@@ -248,6 +248,8 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 		w.Header().Set("X-Result-Count", strconv.Itoa(len(posts)))
 		w.Header().Set("X-Total-Count", strconv.FormatInt(count, 10))
 		w.Header().Set("X-Has-More", strconv.FormatBool(page < maxPage))
+		w.Header().Set("X-Page", strconv.Itoa(page))
+		w.Header().Set("X-Page-Size", strconv.Itoa(pageSize))
 		links := []string{}
 		for _, target := range []struct {
 			page int

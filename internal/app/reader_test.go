@@ -121,6 +121,9 @@ func TestIntegrationReaderScopeSearchAndErrors(t *testing.T) {
 	if w.Header().Get("X-Result-Count") != "1" || w.Header().Get("X-Total-Count") != "2" || w.Header().Get("X-Has-More") != "true" {
 		t.Fatalf("pagination headers: %v", w.Header())
 	}
+	if w.Header().Get("X-Page") != "1" || w.Header().Get("X-Page-Size") != "1" {
+		t.Fatalf("page metadata headers: %v", w.Header())
+	}
 	headRequest := httptest.NewRequest(http.MethodHead, "/api/reader?page_size=1", nil)
 	headRequest.Host = "127.0.0.1:8090"
 	head := httptest.NewRecorder()
