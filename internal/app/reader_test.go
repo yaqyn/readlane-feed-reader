@@ -150,6 +150,12 @@ func TestIntegrationReaderScopeSearchAndErrors(t *testing.T) {
 	if w = readerRequest(aliceHandler, "/api/reader?include_summary=false"); w.Code != 200 || strings.Contains(w.Body.String(), `"summary"`) {
 		t.Fatalf("summary omission: %d %s", w.Code, w.Body.String())
 	}
+	if w = readerRequest(aliceHandler, "/api/reader?include_urls=false"); w.Code != 200 || strings.Contains(w.Body.String(), `"url"`) {
+		t.Fatalf("URL omission: %d %s", w.Code, w.Body.String())
+	}
+	if w = readerRequest(aliceHandler, "/api/reader?include_urls=1"); w.Code != 400 {
+		t.Fatalf("invalid include_urls: %d %s", w.Code, w.Body.String())
+	}
 	if w = readerRequest(aliceHandler, "/api/reader?include_summary=1"); w.Code != 400 {
 		t.Fatalf("invalid include_summary: %d %s", w.Code, w.Body.String())
 	}

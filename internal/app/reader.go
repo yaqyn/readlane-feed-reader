@@ -30,7 +30,7 @@ type readerPost struct {
 	Title       string     `json:"title"`
 	Source      string     `json:"source"`
 	SourceID    string     `json:"source_id"`
-	URL         string     `json:"url"`
+	URL         string     `json:"url,omitempty"`
 	Summary     string     `json:"summary,omitempty"`
 	PublishedAt *time.Time `json:"published_at"`
 }
@@ -123,7 +123,7 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			readerJSON(w, 400, map[string]string{"error": "Reading-list filters are not valid URL encoding."})
 			return
 		}
-		allowed := map[string]bool{"q": true, "source": true, "page": true, "page_size": true, "summary_length": true, "include_sources": true, "include_summary": true}
+		allowed := map[string]bool{"q": true, "source": true, "page": true, "page_size": true, "summary_length": true, "include_sources": true, "include_summary": true, "include_urls": true}
 		for name, entries := range values {
 			if !allowed[name] || len(entries) > 1 {
 				readerJSON(w, 400, map[string]string{"error": "Unknown or duplicate reading-list filter."})
@@ -189,6 +189,15 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			readerJSON(w, 400, map[string]string{"error": "include_summary must be true or false."})
 			return
 		}
+		includeURLs := true
+		switch values.Get("include_urls") {
+		case "", "true":
+		case "false":
+			includeURLs = false
+		default:
+			readerJSON(w, 400, map[string]string{"error": "include_urls must be true or false."})
+			return
+		}
 		// Repeatable read keeps counts and page contents in the same snapshot.
 		tx, err := s.conn.BeginTx(ctx, &sql.TxOptions{Isolation: sql.LevelRepeatableRead, ReadOnly: true})
 		if err != nil {
@@ -226,6 +235,9 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			post := toReaderPost(row.ID, row.Title, row.FeedName, row.FeedID, row.Url, row.Description, row.PublishedAt, summaryLength)
 			if !includeSummary {
 				post.Summary = ""
+			}
+			if !includeURLs {
+				post.URL = ""
 			}
 			posts = append(posts, post)
 		}
