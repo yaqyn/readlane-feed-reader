@@ -156,14 +156,14 @@ func TestIntegrationReaderScopeSearchAndErrors(t *testing.T) {
 	if w = readerRequest(aliceHandler, "/api/reader?format=ndjson"); w.Code != 200 || w.Header().Get("Content-Type") != "application/x-ndjson; charset=utf-8" || !strings.Contains(w.Body.String(), `"title"`) || strings.HasPrefix(w.Body.String(), "[") {
 		t.Fatalf("ndjson: %d %v %s", w.Code, w.Header(), w.Body.String())
 	}
-	etag := w.Header().Get("ETag")
+	listETag := w.Header().Get("ETag")
 	conditionalRequest := httptest.NewRequest(http.MethodGet, "/api/reader?format=ndjson", nil)
 	conditionalRequest.Host = "127.0.0.1:8090"
-	conditionalRequest.Header.Set("If-None-Match", etag)
+	conditionalRequest.Header.Set("If-None-Match", listETag)
 	conditional := httptest.NewRecorder()
 	aliceHandler.ServeHTTP(conditional, conditionalRequest)
-	if etag == "" || conditional.Code != http.StatusNotModified || conditional.Body.Len() != 0 {
-		t.Fatalf("conditional reader: etag=%q status=%d body=%q", etag, conditional.Code, conditional.Body.String())
+	if listETag == "" || conditional.Code != http.StatusNotModified || conditional.Body.Len() != 0 {
+		t.Fatalf("conditional reader: etag=%q status=%d body=%q", listETag, conditional.Code, conditional.Body.String())
 	}
 	if w = readerRequest(aliceHandler, "/api/reader?format=csv"); w.Code != 400 {
 		t.Fatalf("invalid format: %d %s", w.Code, w.Body.String())
