@@ -153,6 +153,12 @@ func TestIntegrationReaderScopeSearchAndErrors(t *testing.T) {
 	if w = readerRequest(aliceHandler, "/api/reader?include_urls=false"); w.Code != 200 || strings.Contains(w.Body.String(), `"url"`) {
 		t.Fatalf("URL omission: %d %s", w.Code, w.Body.String())
 	}
+	if w = readerRequest(aliceHandler, "/api/reader?format=ndjson"); w.Code != 200 || w.Header().Get("Content-Type") != "application/x-ndjson; charset=utf-8" || !strings.Contains(w.Body.String(), `"title"`) || strings.HasPrefix(w.Body.String(), "[") {
+		t.Fatalf("ndjson: %d %v %s", w.Code, w.Header(), w.Body.String())
+	}
+	if w = readerRequest(aliceHandler, "/api/reader?format=csv"); w.Code != 400 {
+		t.Fatalf("invalid format: %d %s", w.Code, w.Body.String())
+	}
 	if w = readerRequest(aliceHandler, "/api/reader?include_urls=1"); w.Code != 400 {
 		t.Fatalf("invalid include_urls: %d %s", w.Code, w.Body.String())
 	}

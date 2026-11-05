@@ -123,7 +123,7 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			readerJSON(w, 400, map[string]string{"error": "Reading-list filters are not valid URL encoding."})
 			return
 		}
-		allowed := map[string]bool{"q": true, "source": true, "page": true, "page_size": true, "summary_length": true, "include_sources": true, "include_summary": true, "include_urls": true}
+		allowed := map[string]bool{"q": true, "source": true, "page": true, "page_size": true, "summary_length": true, "include_sources": true, "include_summary": true, "include_urls": true, "format": true}
 		for name, entries := range values {
 			if !allowed[name] || len(entries) > 1 {
 				readerJSON(w, 400, map[string]string{"error": "Unknown or duplicate reading-list filter."})
@@ -196,6 +196,11 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 			includeURLs = false
 		default:
 			readerJSON(w, 400, map[string]string{"error": "include_urls must be true or false."})
+			return
+		}
+		format := values.Get("format")
+		if format != "" && format != "json" && format != "ndjson" {
+			readerJSON(w, 400, map[string]string{"error": "format must be json or ndjson."})
 			return
 		}
 		// Repeatable read keeps counts and page contents in the same snapshot.
@@ -279,6 +284,15 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 		}
 		if len(links) > 0 {
 			w.Header().Set("Link", strings.Join(links, ", "))
+		}
+		if format == "ndjson" {
+			w.Header().Set("Content-Type", "application/x-ndjson; charset=utf-8")
+			w.WriteHeader(http.StatusOK)
+			encoder := json.NewEncoder(w)
+			for _, post := range posts {
+				_ = encoder.Encode(post)
+			}
+			return
 		}
 		readerJSON(w, 200, payload)
 	})
