@@ -285,6 +285,18 @@ func newReaderHandler(s *state, user database.User) http.Handler {
 		if len(links) > 0 {
 			w.Header().Set("Link", strings.Join(links, ", "))
 		}
+		fingerprint, err := json.Marshal(payload)
+		if err != nil {
+			readerFailure(w, err)
+			return
+		}
+		etag := fmt.Sprintf("\"%x\"", sha256.Sum256(append([]byte(format+"\n"), fingerprint...)))
+		w.Header().Set("ETag", etag)
+		w.Header().Set("Cache-Control", "private, no-cache")
+		if r.Header.Get("If-None-Match") == etag {
+			w.WriteHeader(http.StatusNotModified)
+			return
+		}
 		if format == "ndjson" {
 			w.Header().Set("Content-Type", "application/x-ndjson; charset=utf-8")
 			w.WriteHeader(http.StatusOK)
