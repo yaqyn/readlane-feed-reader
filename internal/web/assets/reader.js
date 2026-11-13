@@ -267,7 +267,17 @@ async function renderRoute(focus = false) {
       signal: active.signal,
       headers: { Accept: "application/json" },
     });
-    const result = await response.json();
+    let result;
+    try {
+      result = await response.json();
+    } catch {
+      throw Object.assign(
+        new Error(
+          "The local reader returned an unreadable response. Try again.",
+        ),
+        { status: response.status },
+      );
+    }
     if (!response.ok)
       throw Object.assign(
         new Error(
