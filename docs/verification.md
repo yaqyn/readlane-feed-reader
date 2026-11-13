@@ -90,7 +90,7 @@ The final app intentionally changes two intermediate lesson interfaces: `agg` no
 
 ## Production verification
 
-- Go 1.27.2, PostgreSQL 18.6, sqlc 1.31.1, and Goose library 3.28.0.
+- Go 1.27.4, PostgreSQL 18.6, sqlc 1.31.1, and Goose library 3.28.0.
 - Race-enabled unit and PostgreSQL integration tests passed, including isolated migrations, cascade deletion, subscription isolation, deduplication, transactional rollback, worker locking, cancellation, retry scheduling, and HTTP cache checks.
 - `go vet ./...`, generated-query consistency, private configuration behavior, static builds, and `govulncheck ./...` checked locally. The vulnerability scan reported no known vulnerabilities in reachable code at the time of verification.
 - Installed `gator` applied embedded migrations, passed `doctor`, collected a real feed, and displayed stored summaries.

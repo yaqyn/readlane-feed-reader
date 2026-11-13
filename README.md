@@ -20,7 +20,7 @@ Readlane is for a **trusted local environment**. Reader selection is not authent
 
 ## <img src="readme-assets/icons/installation.svg" width="24" height="24" alt=""> Installation
 
-You need **Go 1.27.2+**, PostgreSQL 15+, and a terminal. Automatic local setup needs PostgreSQL server tools (`initdb` and `pg_ctl`) in `PATH`.
+You need **Go 1.27.4+**, PostgreSQL 15+, and a terminal. Automatic local setup needs PostgreSQL server tools (`initdb` and `pg_ctl`) in `PATH`.
 
 Clone and launch everything:
 
