@@ -45,7 +45,10 @@ function setup(t, responder = () => library, path = "/") {
     return {
       ok: !result.status || result.status < 400,
       status: result.status || 200,
-      json: async () => result.body || result,
+      json: async () => {
+        if (result.jsonError) throw new SyntaxError("Unexpected token <");
+        return result.body || result;
+      },
     };
   };
   w.eval(script);
@@ -164,6 +167,27 @@ test("refresh failure preserves stories and a retry can recover", async (t) => {
   w.document.getElementById("retry").click();
   await until(() => w.document.getElementById("error-panel").hidden);
   assert.ok(w.document.querySelector(".story"));
+});
+test("unreadable server responses show a stable recovery message", async (t) => {
+  let unreadable = false;
+  const w = setup(t, () =>
+    unreadable ? { status: 502, jsonError: true } : library,
+  );
+  await until(() => w.document.querySelector(".story"));
+  unreadable = true;
+
+  w.document.getElementById("refresh").click();
+
+  await until(() => !w.document.getElementById("error-panel").hidden);
+  assert.ok(w.document.querySelector(".story"));
+  assert.equal(
+    w.document.getElementById("error-text").textContent,
+    "The local reader returned an unreadable response. Try again.",
+  );
+  assert.doesNotMatch(
+    w.document.getElementById("error-text").textContent,
+    /Unexpected token/,
+  );
 });
 test("post navigation preserves search context and exposes a back path", async (t) => {
   const w = setup(
