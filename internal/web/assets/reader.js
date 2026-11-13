@@ -62,7 +62,8 @@ function meta(post) {
   const box = element("div", "story-meta");
   box.append(element("span", "source-name", post.source));
   const date = element("time", "", dateLabel(post.published_at));
-  if (post.published_at) date.dateTime = post.published_at;
+  if (post.published_at && !Number.isNaN(new Date(post.published_at).getTime()))
+    date.dateTime = post.published_at;
   box.append(date);
   return box;
 }

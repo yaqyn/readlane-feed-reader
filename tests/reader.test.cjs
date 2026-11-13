@@ -97,6 +97,16 @@ test("feed text is text rather than executable markup", async (t) => {
   );
   assert.match(w.document.querySelector(".story h2").textContent, /<img/);
 });
+test("invalid publication dates do not emit invalid time metadata", async (t) => {
+  const w = setup(t, () => ({
+    ...library,
+    posts: [{ ...post, published_at: "not-a-date" }],
+  }));
+  await until(() => w.document.querySelector(".story time"));
+  const time = w.document.querySelector(".story time");
+  assert.equal(time.textContent, "Publication date unavailable");
+  assert.equal(time.hasAttribute("datetime"), false);
+});
 test("search persists URL state, clears immediately, and ignores stale replies", async (t) => {
   const w = setup(t, async (url) => {
     const q = new URL(url, "http://127.0.0.1:8090").searchParams.get("q");
